@@ -1,0 +1,31 @@
+gcdHL_DE:
+;gcd(HL,DE)->HL
+;binary GCD algorithm
+    ld a,h \ or l \ ret z
+    ex de,hl
+    ld a,h \ or l \ ret z
+    sbc hl,de
+    jr z,step4
+    add hl,de
+    ld b,1
+    ld a,e \ or l \ rra \ jr c,+_
+    inc b
+    rr h \ rr l
+    rr d \ rr e
+    ld a,e \ or l \ rra \ jr nc,$-12
+_:
+    srl h \ rr l \ jr nc,$-4 \ adc hl,hl
+    ex de,hl
+_:
+    srl h \ rr l \ jr nc,$-4 \ adc hl,hl
+    xor a \ sbc hl,de
+    jr z,step4
+    jr nc,-_ \ sub l \ ld l,a \ sbc a,a \ sub h \ ld h,a
+    jp -_-1
+step4:
+    ex de,hl
+    dec b
+    ret z
+    add hl,hl
+    djnz $-1
+    ret

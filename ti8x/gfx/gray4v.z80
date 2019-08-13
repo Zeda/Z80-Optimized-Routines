@@ -1,0 +1,49 @@
+gray4v:
+;Inputs: (buf0) is the secondary (lighter) buffer (vertically aligned)
+;        (buf1) is the primary (darker) buffer (vertically aligned)
+;Destroys none
+;62260cc
+;Minimum time between writes is 69cc, so not suitable for 15MHz
+;Expects y-increment mode and LCD_Y set to 0.
+;Exits with LCD_Y preserved
+    push hl
+    push de
+    push bc
+    push af
+buf0=$+1
+    ld hl,plotSScreen
+buf1=$+1
+    ld de,saveSScreen
+    ld a,20h
+graymask=$+1
+    ld c,%11011011
+rowloop:
+    ld b,64
+    push af
+    out (16),a
+colloop:
+    ld a,c      ;\
+    cp $C0      ; |
+    rra         ; |Rotate the graymask.
+    ld c,a      ;/ Can be efficiently done by rotating left while shifting in the XOR of the top two bits.
+    ld a,(de)
+    xor (hl)
+    and c
+    xor (hl)
+    out (17),a
+    inc hl
+    inc de
+    djnz colloop
+    pop af
+    inc a
+    cp 2Ch
+    jp nz,rowloop
+    ld a,c      ;\
+    cp $C0      ; |
+    rra         ; |Rotate the graymask again
+    ld (graymask),a
+    pop af
+    pop bc
+    pop de
+    pop hl
+    ret

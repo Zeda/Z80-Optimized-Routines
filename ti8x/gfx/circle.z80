@@ -1,0 +1,123 @@
+circle:
+    ld (center),hl
+    add a,a
+    inc a
+    ld e,a
+    ld d,-1
+    rra
+    ld l,a      ;y
+    ld h,0      ;x
+circleloop:
+;;loop until x=y
+    call plot8
+    ret z
+    inc h
+    dec e
+    dec e
+    sub e
+    jp nc,loop
+_:
+    dec l
+    inc d
+    inc d
+    add a,d
+    jr c,circleloop
+    call plot8
+    jp nz,-_
+    ret
+plot8:
+    push de
+    push af
+    ld de,(buf)
+    ld (xy),hl
+    ld bc,(center)
+    ld a,h
+    or a
+    jr z,plotother4
+;;  plot(h+x,k+y)
+    add a,b
+    ld b,a
+    ld a,c \ add a,l \ ld c,a
+    call plot
+;;  plot(h-x,k-y)
+    ld a,b \ sub h \ ld b,a
+    ld a,c \ sub l \ ld c,a
+    call plot
+    ld a,h
+    cp l
+    jr z,plotother2
+;;  plot(h+y,k+x)
+    add a,b \ ld b,a
+    ld a,c \ add a,l \ ld c,a
+    call plot
+;;  plot(h-y,k-x)
+    ld a,b \ sub l \ ld b,a
+    ld a,c \ sub h \ ld c,a
+    call plot
+plotother4:
+;;  plot(h-x,k+y)
+    ld a,b \ sub h \ ld b,a
+    ld a,c \ add a,l \ ld c,a
+    call plot
+;;  plot(h+x,k-y)
+    ld a,b \ add a,h \ ld b,a
+    ld a,c \ sub l \ ld c,a
+    call plot
+plotother2:
+;;  plot(h-y,k+x)
+    ld a,b \ sub l \ ld b,a
+    ld a,c \ add a,h \ ld c,a
+    call plot
+;;  plot(h+y,k-x)
+    ld a,b \ add a,l \ ld b,a
+    ld a,c \ sub h \ ld c,a
+    call plot
+endplot8:
+    ld a,l
+    cp h
+    pop de
+    ld a,d
+    pop de
+    ret
+plot:
+    ld a,b
+    cp 96
+    jr nc,noplot
+    ld a,c
+    cp 64
+    jr nc,noplot
+    ld h,0
+    ld l,c
+    ld b,h
+    add hl,hl
+    add hl,bc
+    add hl,hl
+    add hl,hl
+    ld c,a
+    sra c
+    sra c
+    sra c
+    add hl,bc
+    add hl,de
+    and 7
+    ld b,a
+    ld a,80h
+    jr z,$+5
+    rrca
+    djnz $-1
+;plot method
+    ld bc,(method-1)
+    djnz $+4
+    or (hl)
+    ld (hl),a
+    djnz $+4
+    xor (hl)
+    ld (hl),a
+    djnz $+5
+    cpl
+    and (hl)
+    ld (hl),a
+noplot:
+    ld bc,(center)
+    ld hl,(xy)
+    ret

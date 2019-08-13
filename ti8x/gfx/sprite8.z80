@@ -1,0 +1,155 @@
+plotSScreen =$9340
+gbuf        =plotSScreen
+.db $BB,$6D
+.org $9D95
+    ld h,1
+    ld bc,$0101
+    ld de,sprite
+mainloop:
+    call sprite8
+    call bufToLCD
+    call sprite8
+    ei
+    halt
+    ld a,(843Fh)
+    or a
+    jr z,$-5
+    cp 15
+    ret z
+    dec a \ jr nz,$+3 \ inc c
+    dec a \ jr nz,$+3 \ dec b
+    dec a \ jr nz,$+3 \ inc b
+    dec a \ jr nz,$+3 \ dec c
+    jr mainloop
+sprite:
+    .db $3C,$42,$81,$81,$81,$81,$42,$3C
+bufToLCD:
+    push hl
+    push de
+    push bc
+    push af
+    .db $EF,$6A,$48
+    pop af
+    pop bc
+    pop de
+    pop hl
+    ret
+sprite8:
+;Input: H is method, DE points to sprite, (B,C)=(x,y)
+;   H=0 Erase
+;   H=1 OR
+;   H=2 XOR
+;   H=3 Overwrite
+    push hl
+    push de
+    push bc
+    push af
+    call +_
+    pop af
+    pop bc
+    pop de
+    pop hl
+    ret
+_:
+    ld a,b
+    ld (sprite_x),a
+    add a,7
+    cp 96+7
+    ret nc
+    ld a,c
+    add a,7
+    cp 64+7
+    ret nc
+    sub 7
+    push af
+    ld a,h
+    and 3
+    ld h,a
+    sub 1
+    sbc a,a
+    ld (mask),a
+    and $2F     ;$2F == CPL
+    ld (invert),a
+    ld a,h
+    add a,a
+    add a,a
+    add a,a
+    add a,$A6
+    ld (logic1),a
+    ld (logic2),a
+    
+    ld a,b
+    ld b,0
+    bit 7,c
+    jr z,$+3
+    dec b
+    ld h,b
+    ld l,c
+    add hl,hl
+    add hl,bc
+    add hl,hl
+    add hl,hl
+    ld c,a
+    sra c
+    sra c
+    sra c
+    ld b,0
+    bit 7,c
+    jr z,$+3
+    dec b
+    add hl,bc
+    ld bc,gbuf
+    add hl,bc
+    and 7
+    ld (rotate),a
+    ld b,8
+    pop af
+sprite8loop:
+    cp 64
+    jr nc,endsprite8loop
+    push bc
+    push af
+mask=$+1
+    ld c,0
+    ld a,(de)
+invert:
+    nop
+    rrc c
+rotate=$+1
+    ld b,0
+    inc b
+    dec b
+    jr z,$+7
+    rra
+    rr c
+    djnz $-3
+    ld b,a
+    call writeSprite
+    pop af
+    pop bc
+endsprite8loop:
+    inc a
+    inc de
+    djnz sprite8loop
+    ret
+writeSprite:
+sprite_x=$+1
+    ld a,0
+    cp 96
+    jr nc,$+8
+    ld a,b
+logic1:
+    nop
+    ld (hl),a
+    ld a,(sprite_x)
+    inc hl
+    add a,8
+    cp 96
+    jr nc,$+5
+    ld a,c
+logic2:
+    nop
+    ld (hl),a
+    ld bc,11
+    add hl,bc
+    ret

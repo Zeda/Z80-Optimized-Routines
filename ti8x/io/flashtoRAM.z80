@@ -1,0 +1,56 @@
+;RAM: 21+21n
+;ARC, but no boundary: 118+21n
+;Arc, on two pages: 21n+268
+;Arc, on three pages: 21n+357
+  or a
+  jr z,ReadRAM    ;different routine in the App,
+  out (6),a
+  add hl,bc
+;  jr c,read_from_Arc_blocks   ;if you need this, you probably need a different routine. this will write on page 0.
+  jp p,read_from_ARC_noboundary
+read_from_Arc_blocks:
+;We will read in blocks to avoid checking page boundaries
+;To do so, we first read 0x8000 - HL bytes
+  xor a
+  sbc hl,bc
+  sub l \ ld l,a
+  ld a,$80 \ sbc a,h \ ld h,a
+  ;now we will subtract BC-HL  -> BC
+  ld a,c \ sub l \ ld c,a
+  ld a,b \ sbc a,h \ ld b,a
+  push bc
+  ld b,h
+  ld c,l
+  sub l \ ld l,a
+  ld a,$80 \ sbc a,h \ ld h,a
+  ;now we read the first block
+block_loop:
+  ldir
+  ;now we increment the page and continue reading from $4000
+  in a,(6)
+  inc a
+  out (6),a
+  ld h,40h
+  pop bc
+  ;if BC<$4000, just LDIR the rest
+  ld a,b
+  sub 40h
+  jr c,read_from_RAM
+  ld b,a
+  push bc
+  ld b,h
+  ld c,l
+  jp block_loop
+read_from_ARC_noboundary:
+  or a
+  sbc hl,bc
+read_from_RAM:
+  ldir
+  in a,(6)
+  ld b,a
+page_restore = $-ReadArcData+TSA+1
+  ld a,0
+  out (6),a
+  ld a,b
+  ld b,c
+  ret

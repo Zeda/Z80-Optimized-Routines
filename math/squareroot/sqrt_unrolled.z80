@@ -1,0 +1,99 @@
+sqrtHL:
+;returns HL as the sqrt, DE as the remainder
+;min: 374cc
+;max: 587cc
+;avg: 480.5cc
+
+  xor a
+  ld c,a
+  ld e,a
+  ld b,$40
+  ld d,b
+
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  ld d,e
+  or a
+_:
+;HL is either $0000 or $4000
+  set 4,d
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  or a
+  .db $DA   ;start of jp c,** which is 10cc to skip the next two bytes.
+_:
+  set 5,d
+  res 4,d
+  srl d
+
+;HL is either $0000 or $1000 or $2000 or $3000
+
+  set 2,d
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  .db $DA   ;start of jp c,** which is 10cc to skip the next two bytes.
+_:
+  set 3,d
+  res 2,d
+  srl d
+
+  inc d
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  dec d
+  .db $30   ;start of jr nc,** which is 10cc to skip the next two bytes.
+_:
+  inc d
+  srl d
+
+  set 6,e
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  or a
+  .db $DA   ;start of jp c,** which is 10cc to skip the next two bytes.
+_:
+  set 7,e
+  res 6,e
+  srl d
+  rr e
+
+
+  set 4,e
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  or a
+  .db $DA   ;start of jp c,** which is 10cc to skip the next two bytes.
+_:
+  set 5,e
+  res 4,e
+  srl d
+  rr e
+
+
+  set 2,e
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  or a
+  .db $DA   ;start of jp c,** which is 10cc to skip the next two bytes.
+_:
+  set 3,e
+  res 2,e
+  srl d
+  rr e
+
+  inc e
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  dec e
+_:
+  srl d
+  rr e
+  ret

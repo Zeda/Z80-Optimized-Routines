@@ -1,0 +1,25 @@
+vbufToLCD:
+;;Inputs: (buf0) is the buffer to render (vertically aligned)
+    push hl
+    push bc
+    push af
+buf0=$+1
+    ld hl,plotSScreen
+    ld a,20h
+rowloop:
+    out (16),a
+    ld bc,$4011
+    push af
+colloop:
+    in a,(16) \ add a,a \ jr c,$-3
+    outi
+    jr nz,colloop
+    pop af
+    inc a
+    cp 2Ch
+    jp nz,rowloop
+    pop af
+    pop bc
+    pop hl
+    ret
+    

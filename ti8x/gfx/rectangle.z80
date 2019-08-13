@@ -1,0 +1,399 @@
+;;  (B,C) = (x,y) signed
+;;  (D,E) = (w,h) unsigned
+;;  HL points to buf
+
+rectEraseBorder:
+    ld (bufptr),hl
+    call rectSub
+    ret nc
+    push de
+    ld de,(bufptr)
+    add hl,de
+    pop de
+    ld (fill_mask),de
+    ld a,e
+    neg
+    cpl
+    ld e,a
+    ld a,d
+    add a,1
+    rra
+    cpl
+    ld d,a
+    ld (border_mask),de
+    djnz +_
+    xor e
+    ld de,(fill_mask)
+    push af
+    ld a,d
+    xor e
+    pop de
+    ld e,a  ;e is the fill mask, d is the border mask
+;so we are just erasing the border.
+    and (hl)
+    ld (hl),a
+    inc hl
+    dec c
+    ret z
+    dec c
+    jr z,$+9
+    ld a,(hl)
+    and d
+    ld (hl),a
+    inc hl
+    dec c
+    jr nz,$-5
+    ld a,e
+    and (hl)
+    ld (hl),a
+    ret
+_:
+    push bc
+    push hl
+    ld a,(hl) \ and d \ ld (hl),a \ inc hl
+    dec b
+    jr z,$+7
+    xor a
+    ld (hl),a \ inc hl \ djnz $-2
+    ld a,(hl) \ and e \ ld (hl),a
+    ld bc,12
+    pop hl
+    add hl,bc
+    pop bc
+    dec c
+    jr nz,-_
+    ret
+    
+    ret
+rectXORBorder:
+    ld (bufptr),hl
+    call rectSub
+    ret nc
+    push de
+    ld de,(bufptr)
+    add hl,de
+    pop de
+    ld a,d
+    ld (fill_mask),de
+    ld a,e
+    neg
+    ld e,a
+    ld a,d
+    add a,1
+    rra
+    ld d,a
+    ld (border_mask),de
+    djnz +_
+    or e
+    ld de,(fill_mask)
+    push af
+    ld a,d
+    xor e
+    pop de
+    ld e,a  ;e is the fill mask, d is the border mask
+    xor (hl)
+    ld (hl),a
+    inc hl
+    dec c
+    ret z
+    dec c
+    jr z,$+9
+    ld a,(hl)
+    xor d
+    ld (hl),a
+    inc hl
+    dec c
+    jr nz,$-5
+    ld a,e
+    xor (hl)
+    ld (hl),a
+    ret
+_:
+    ret
+rectORBorder:
+    ld (bufptr),hl
+    call rectSub
+    ret nc
+    push de
+    ld de,(bufptr)
+    add hl,de
+    pop de
+    ld (fill_mask),de
+    ld a,e
+    neg
+    ld e,a
+    ld a,d
+    add a,1
+    rra
+    ld d,a
+    ld (border_mask),de
+    djnz +_
+    or e
+    ld de,(fill_mask)
+    push af
+    ld a,d
+    xor e
+    pop de
+    ld e,a  ;e is the fill mask, d is the border mask
+    or (hl)
+    ld (hl),a
+    inc hl
+    dec c
+    ret z
+    dec c
+    jr z,$+9
+    ld a,(hl)
+    or d
+    ld (hl),a
+    inc hl
+    dec c
+    jr nz,$-5
+    ld a,e
+    or (hl)
+    ld (hl),a
+    ret
+_:
+    ret
+rectErase:
+    ld (bufptr),hl
+    call rectSub
+    ret nc
+    push de
+    ld de,(bufptr)
+    add hl,de
+    pop de
+    ld a,d
+    cpl
+    ld d,a
+    ld a,e
+    cpl
+    ld e,a
+    djnz +_
+    ld a,d
+    xor e
+    ld b,c
+    ld c,a
+    ld de,12
+    ld a,c
+    and (hl)
+    ld (hl),a
+    add hl,de
+    djnz $-4
+    ret
+_:
+    push bc
+    push hl
+    ld a,(hl) \ and d \ ld (hl),a \ inc hl
+    dec b
+    jr z,$+7
+    xor a
+    ld (hl),a \ inc hl \ djnz $-2
+    ld a,(hl) \ and e \ ld (hl),a
+    ld bc,12
+    pop hl
+    add hl,bc
+    pop bc
+    dec c
+    jr nz,-_
+    ret
+rectXOR:
+    ld (bufptr),hl
+    call rectSub
+    ret nc
+    push de
+    ld de,(bufptr)
+    add hl,de
+    pop de
+    djnz +_
+    ld a,d
+    and e
+    ld b,c
+    ld c,a
+    ld de,12
+    ld a,c
+    xor (hl)
+    ld (hl),a
+    add hl,de
+    djnz $-4
+    ret
+_:
+    push bc
+    push hl
+    ld a,(hl) \ xor d \ ld (hl),a \ inc hl
+    dec b
+    jr z,$+8
+    ld a,(hl) \ cpl \ ld (hl),a \ inc hl \ djnz $-4
+    ld a,(hl) \ xor e \ ld (hl),a
+    ld bc,12
+    pop hl
+    add hl,bc
+    pop bc
+    dec c
+    jr nz,-_
+    ret
+rectOR:
+;;  (B,C) = (x,y) signed
+;;  (D,E) = (w,h) unsigned
+;;  HL points to buf
+    ld (bufptr),hl
+    call rectSub
+    ret nc
+    push de
+    ld de,(bufptr)
+    add hl,de
+    pop de
+    djnz +_
+    ld a,d
+    and e
+    ld b,c
+    ld c,a
+    ld de,12
+    ld a,c
+    or (hl)
+    ld (hl),a
+    add hl,de
+    djnz $-4
+    ret
+_:
+    push bc
+    push hl
+    ld a,(hl) \ or d \ ld (hl),a \ inc hl
+    dec b
+    jr z,$+8
+    ld c,-1
+    ld (hl),c \ inc hl \ djnz $-2
+    ld a,(hl) \ or e \ ld (hl),a
+    ld bc,12
+    pop hl
+    add hl,bc
+    pop bc
+    dec c
+    jr nz,-_
+    ret
+rectsub:
+;(B,C) = (x,y) signed
+;(D,E) = (w,h) unsigned
+;Output:
+;  Start Mask  D
+;  End Mask    E
+;  Byte width  B
+;  Height      C
+;  buf offset  HL
+  bit 7,b
+  jr z,+_
+  ;Here, b is negative, so we have to add width to x.
+  ;If the result is still negative, the entire box is out of bounds, so return
+  ;otherwise, set width=newvalue,b=0
+  ld a,d
+  add a,b
+  ret nc
+  ld d,a
+  ld b,0
+_:
+  bit 7,c
+  jr z,+_
+  ld a,e
+  add a,c
+  ret nc
+  ld e,a
+  ld c,0
+_:
+;We have clipped all negative areas.
+;Now we need to verify that (x,y) are on the screen.
+;If they aren't, then the whole rectangle is off-screen so no need to draw.
+  ld a,b
+  cp 96
+  ret nc
+  ld a,c
+  cp 64
+  ret nc
+;Let's also verfiy that height and width are non-zero:
+  ld a,d
+  or a
+  ret z
+  ld a,e
+  or a
+  ret z
+;Now we need to clip the width and height to be in-bounds
+  add a,c
+  cp 65
+  jr c,+_
+  ;Here we need to set e=64-c
+  ld a,64
+  sub c
+  ld e,a
+_:
+  ld a,d
+  add a,b
+  cp 97
+  jr c,+_
+  ;Here we need to set d=96-b
+  ld a,96
+  sub b
+  ld d,a
+_:
+;B is starting X
+;C is starting Y
+;D is width
+;E is height
+
+  push bc
+  ld a,b
+  and 7
+  ld b,a
+  ld a,-1
+  jr z,+_
+  rra \ djnz $-1
+_:
+  inc a
+  cpl
+  ld h,a    ;start mask
+
+  ld a,b
+  add a,d
+  and 7
+  ld b,a
+  ld a,-1
+  jr z,+_
+  rra \ djnz $-1
+_:
+  inc a
+  ld l,a  ;end mask
+  ex (sp),hl
+  ld a,h
+  ld h,b
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  add hl,hl
+  ld b,a
+  rrca
+  rrca
+  rrca
+  and 31
+  add a,l
+  ld l,a
+  jr nc,$+3
+  inc h
+
+;B is the starting x, D is width
+;Only A,B,D,E are available
+  ld a,b
+  add a,d
+  and $F8
+  ld d,a
+
+  ld a,b
+  and $F8
+  ld b,a
+  ld a,d
+  sub b
+  rrca
+  rrca
+  rrca
+  ld b,a
+  ld c,e
+  inc b
+  pop de
+  scf
+  ret

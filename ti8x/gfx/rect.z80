@@ -1,0 +1,127 @@
+#define included_rect
+rectsub:
+;(B,C) = (x,y) signed
+;(D,E) = (w,h) unsigned
+;Output:
+;  Start Mask  D
+;  End Mask    E
+;  Byte width  B
+;  Height      C
+;  buf offset  HL
+  bit 7,b
+  jr z,+_
+  ;Here, b is negative, so we have to add width to x.
+  ;If the result is still negative, the entire box is out of bounds, so return
+  ;otherwise, set width=newvalue,b=0
+  ld a,d
+  add a,b
+  ret nc
+  ld d,a
+  ld b,0
+_:
+  bit 7,c
+  jr z,+_
+  ld a,e
+  add a,c
+  ret nc
+  ld e,a
+  ld c,0
+_:
+;We have clipped all negative areas.
+;Now we need to verify that (x,y) are on the screen.
+;If they aren't, then the whole rectangle is off-screen so no need to draw.
+  ld a,b
+  cp 96
+  ret nc
+  ld a,c
+  cp 64
+  ret nc
+;Let's also verfiy that height and width are non-zero:
+  ld a,d
+  or a
+  ret z
+  ld a,e
+  or a
+  ret z
+;Now we need to clip the width and height to be in-bounds
+  add a,c
+  cp 65
+  jr c,+_
+  ;Here we need to set e=64-c
+  ld a,64
+  sub c
+  ld e,a
+_:
+  ld a,d
+  add a,b
+  cp 97
+  jr c,+_
+  ;Here we need to set d=96-b
+  ld a,96
+  sub b
+  ld d,a
+_:
+;B is starting X
+;C is starting Y
+;D is width
+;E is height
+
+  push bc
+  ld a,b
+  and 7
+  ld b,a
+  ld a,-1
+  jr z,+_
+  rra \ djnz $-1
+_:
+  inc a
+  cpl
+  ld h,a    ;start mask
+
+  ld a,b
+  add a,d
+  and 7
+  ld b,a
+  ld a,-1
+  jr z,+_
+  rra \ djnz $-1
+_:
+  inc a
+  ld l,a  ;end mask
+  ex (sp),hl
+  ld a,h
+  ld h,b
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  add hl,hl
+  ld b,a
+  rrca
+  rrca
+  rrca
+  and 31
+  add a,l
+  ld l,a
+  jr nc,$+3
+  inc h
+
+;B is the starting x, D is width
+;Only A,B,D,E are available
+  ld a,b
+  add a,d
+  and $F8
+  ld d,a
+
+  ld a,b
+  and $F8
+  ld b,a
+  ld a,d
+  sub b
+  rrca
+  rrca
+  rrca
+  ld b,a
+  ld c,e
+  pop de
+  scf
+  ret

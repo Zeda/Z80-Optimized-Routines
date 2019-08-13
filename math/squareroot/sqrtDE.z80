@@ -1,0 +1,34 @@
+sqrtDE:
+;returns HL as the sqrt, DE as the remainder
+;34 bytes
+;min: 931cc
+;max: 1123cc
+;avg: 1027cc
+;931+8{24,0}
+
+  ld bc,$8000
+  ld h,c
+  ld l,c
+  ld a,c
+sqrt_loop:
+  srl b
+  rra
+  ld c,a
+  add hl,bc
+  ex de,hl
+  sbc hl,de
+  jr nc,+_
+  add hl,de
+  ex de,hl
+  or a
+  sbc hl,bc
+  .db $DA   ;start of jp c,** which is 10cc to skip the next two bytes.
+_:
+  ex de,hl
+  add hl,bc
+  srl h
+  rr l
+  srl b
+  rra
+  jr nc,sqrt_loop
+  ret

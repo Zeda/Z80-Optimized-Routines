@@ -1,0 +1,49 @@
+.db $BB,$6D
+.org $9D95
+  ld hl,$9412
+  ld de,$AB40
+  ld bc,$E912
+  call div32_16
+  ret
+div32_16:
+;HLDE/BC, BC>HL
+;output: DE is quotient, HL is remainder
+;773cc+16{0,10}
+;avg: 853cc
+  xor a
+  sub c
+  ld c,a
+  ld a,0
+  sbc a,b
+  rra
+  ld b,a
+  rr c
+  rla
+
+  add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl d \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl \ add hl,bc \ jr c,$+4 \ sbc hl,bc
+  rl e \ adc hl,hl
+  rra
+  ret nc
+;HL is the remainder
+;r-Q*E = HL-DE
+  or a
+  sbc hl,de
+  ret nc
+  dec de
+  ret
+.echo $-div32_16

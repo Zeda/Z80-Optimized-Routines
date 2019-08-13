@@ -1,0 +1,39 @@
+#ifndef included_UpdateLCD
+#define included_UpdateLCD
+
+UpdateLCD:
+  push hl
+  push de
+  push bc
+  push af
+  ld hl,gbuf
+  in a,(16) \ rla \ jr c,$-3
+  ld a,$80
+  out (16),a
+
+  ld de,11
+  in a,(16) \ rla \ jr c,$-3
+  ld a,$20
+col:
+  out (10h),a
+  push af
+  ld bc,$4011
+row:
+  in a,(16) \ rla \ jr c,$-3
+  outi
+  add hl,de
+  jr nz,row
+  pop af
+  inc a
+  dec h
+  dec h
+  dec h
+  inc hl
+  cp $2C
+  jp nz,col
+  pop af
+  pop bc
+  pop de
+  pop hl
+  ret
+#endif

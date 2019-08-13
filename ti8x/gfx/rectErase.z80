@@ -1,0 +1,53 @@
+rectErase:
+;;  (B,C) = (x,y) signed
+;;  (D,E) = (w,h) unsigned
+;;  HL points to buf
+    push hl
+    call rectSub
+    pop ix
+    ret nc
+    ex de,hl
+    add ix,de
+    ex de,hl
+    push ix
+    pop hl
+    ld a,d
+    cpl
+    ld d,a
+    ld a,e
+    cpl
+    ld e,a
+    dec b
+    jp m,eraserect0
+    inc b
+erase_rect_loop:
+    push bc
+    push hl
+    ld a,(hl) \ and d \ ld (hl),a \ inc hl
+    dec b
+    jr z,$+7
+    xor a
+    ld (hl),a \ inc hl \ djnz $-2
+    ld a,(hl) \ and e \ ld (hl),a
+    ld bc,12
+    pop hl
+    add hl,bc
+    pop bc
+    dec c
+    jr nz,erase_rect_loop
+    ret
+eraserect0:
+    ld a,d
+    xor e
+    ld b,c
+    ld c,a
+    ld de,12
+    ld a,c
+    and (hl)
+    ld (hl),a
+    add hl,de
+    djnz $-4
+    ret
+#ifndef included_rect
+#include "rect.z80"
+#endif

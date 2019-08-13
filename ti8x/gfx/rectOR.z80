@@ -1,0 +1,47 @@
+rectOR:
+;;  (B,C) = (x,y) signed
+;;  (D,E) = (w,h) unsigned
+;;  HL points to buf
+    push hl
+    call rectSub
+    pop ix
+    ret nc
+    ex de,hl
+    add ix,de
+    ex de,hl
+    push ix
+    pop hl
+    dec b
+    jp m,orrect0
+    inc b
+or_rect_loop:
+    push bc
+    push hl
+    ld a,(hl) \ or d \ ld (hl),a \ inc hl
+    dec b
+    jr z,$+8
+    ld c,-1
+    ld (hl),c \ inc hl \ djnz $-2
+    ld a,(hl) \ or e \ ld (hl),a
+    ld bc,12
+    pop hl
+    add hl,bc
+    pop bc
+    dec c
+    jr nz,or_rect_loop
+    ret
+orrect0:
+    ld a,d
+    and e
+    ld b,c
+    ld c,a
+    ld de,12
+    ld a,c
+    or (hl)
+    ld (hl),a
+    add hl,de
+    djnz $-4
+    ret
+#ifndef included_rect
+#include "rect.z80"
+#endif

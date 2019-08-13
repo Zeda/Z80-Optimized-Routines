@@ -1,0 +1,12 @@
+LFSR:
+;13 bytes
+;72cc
+;period is 65535
+    ld hl,(seed)
+    add hl,hl
+    sbc a,a
+    and %00101101
+    xor l
+    ld l,a
+    ld (seed1),hl
+    ret

@@ -1,0 +1,32 @@
+getKey:
+;return keypress in A, preserves registers
+;91+58G+20R, G is on [1,7], R is on [1,8]
+;No keypresses: 565cc
+;Max with keypress: 657cc
+;Min with keypress: 169cc
+;34 bytes
+    push bc
+    push de
+    ld c,1
+    ld de,$FEFF
+_:
+    out (c),d
+    sla d
+    jr nc,+_
+    inc e
+    in a,(1)
+    inc a
+    jr z,-_
+
+    dec a
+    sla e
+    sla e
+    sla e
+    inc e
+    rra
+    jr c,$-2
+    ld a,e
+_:
+    pop de
+    pop bc
+    ret
