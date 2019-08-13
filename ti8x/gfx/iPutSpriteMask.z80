@@ -1,0 +1,78 @@
+;Masked Sprite Routine
+;Created by KermMartian, modifed from IonPutSprite
+iPutSpriteMask:
+;Inputs:
+;   ix = b-byte mask
+;   ix+b = b-byte sprite
+;   a,l = x and y as with IonPutSprite
+;   b= height of sprite
+;Outputs:
+;   Sprite masked to screen
+;Destroyed:
+;   All
+   ld   e,l
+   ld   h,$00
+   ld   d,h
+   add   hl,de
+   add   hl,de
+   add   hl,hl
+   add   hl,hl
+   ld   e,a
+   and   $07
+   ld   c,a
+   srl   e
+   srl   e
+   srl   e
+   add   hl,de
+   ld   de,gbuf
+   add   hl,de
+iPutSpriteLoop1Mask:
+   ld   d,(ix)
+   ld   e,$FF
+   ld   a,c
+   or   a
+   jr   z,iPutSpriteSkip1Mask
+iPutSpriteLoop2Mask:
+   srl   d
+   rr   e
+   set 7,d
+   dec   a
+   jr   nz,iPutSpriteLoop2Mask
+iPutSpriteSkip1Mask:
+   ld   a,(hl)
+   and   d
+   ld   (hl),a
+   inc   hl
+   ld   a,(hl)
+   and   e
+   ld   (hl),a
+   push ix
+   dec hl
+   ld de,8
+   add ix,de
+iPutSpriteLoop1AND:
+   ld   d,(ix)
+   ld   e,$00
+   ld   a,c
+   or   a
+   jr   z,iPutSpriteSkip1AND
+iPutSpriteLoop2AND:
+   srl   d
+   rr   e
+   dec   a
+   jr   nz,iPutSpriteLoop2AND
+iPutSpriteSkip1AND:
+   ld   a,(hl)
+   xor   d
+   ld   (hl),a
+   inc   hl
+   ld   a,(hl)
+   xor   e
+   ld   (hl),a
+
+   pop ix
+   ld   de,$0B
+   add   hl,de
+   inc   ix
+   djnz   iPutSpriteLoop1Mask
+   ret

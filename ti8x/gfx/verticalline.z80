@@ -1,0 +1,34 @@
+;Fast Vertical Line
+;Created by calc84maniac
+
+vertical:
+;Input:
+;   A is the column number
+;Output:
+;   Vertical line at column A
+;Destroys:
+;   AF, BC, DE, HL
+ ld hl,plotsscreen
+ ld d,0
+ ld e,a
+ srl e
+ srl e
+ srl e
+ add hl,de
+ and $07
+ ld b,a
+ inc b
+ ld a,1
+vertloop1:
+ rrca
+ djnz vertloop1
+ ld c,a
+ ld b,64
+ ld e,12
+vertloop2:
+ ld a,c
+ or (hl)
+ ld (hl),a
+ add hl,de
+ djnz vertloop2
+ ret

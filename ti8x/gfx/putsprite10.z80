@@ -1,0 +1,66 @@
+;PutSprite10
+;Created by Fallen Ghost
+;PutSprite8 I modified to PutSprite10. Might be useless for you, but if you have some slightly larger than 8 sprites, then you can use PutSprite10. As it is faster than PutSprite16 and allows you not to destroy shadow registers too, and run interrupts during, and smaller. So if you have unconventional sprite size...
+
+
+putsprite10:
+putsprite_10_bits:
+;Input:
+;   L=Y coordinates
+;   A=X coordinates
+;   b=height of sprite
+;   ix=sprite location. IX+1 being the other 2 bits
+;Output:
+;   IX=data after the sprite's data
+;Destroyed
+;   b
+   ld   e,l
+   ld   h,00h
+   ld   d,h
+   add   hl,de
+   add   hl,de
+   add   hl,hl
+   add   hl,hl
+   ld   e,a
+   and   07h
+   ld   c,a
+   srl   e
+   srl   e
+   srl   e
+   add   hl,de
+   ld   de,plotSScreen
+   add   hl,de
+putSprite10Loop1:
+   ld   d,(ix)
+   ld   e,(ix+1)        ;modified this
+   ld   a,c
+   or   a
+   jr   z,putSprite10Skip1
+putSprite10Loop2:
+   srl   d
+   rr   e
+   dec   a
+   jr   nz,putSprite10Loop2
+putSprite10Skip1:
+   push    af    ;save carry. Will be 0 if bit
+                ;was not destroyed or
+                ;if you skipped loop2
+   ld   a,(hl)
+   xor   d
+   ld   (hl),a
+   inc   hl
+   ld   a,(hl)
+   xor   e
+   ld   (hl),a
+   pop af
+   jr     nc,putSprite10skip3
+   ld     a,(hl)
+   xor   %10000000
+   ld     (hl),a
+putSprite10skip3:
+   ld   de,0Bh
+   add   hl,de
+   inc   ix
+   inc   ix                             ;added this
+   djnz   putSprite10Loop1
+   ret

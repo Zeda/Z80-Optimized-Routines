@@ -1,0 +1,117 @@
+_SetHomeHook equ 4FABh
+_ClrHomeHook equ 4FAEh
+apiFlg2 equ 41
+sysHookFlg equ 52
+appInpPrmptInit equ 0
+appInpPrmptDone equ 1
+appWantHome equ 4
+
+_saveCmdShadow equ 4573h
+_saveShadow equ 4576h
+_rstrShadow equ 4579h
+
+cmdExec equ 6
+cmdFlags equ 12
+cxExtApps equ 058h
+
+RunBASICProgram:
+;Originally made by Dan E. Bugfixes and optimizations by Kerm Martian.
+;This routine allows you to run BASIC programs from an App.
+;
+;Inputs:
+;   OP1 = name of variable to parse [eg program to run]
+;   You also need to define three bytes of saveRAM, homeSaveA (1 byte) and homeSaveHL (2 bytes).
+;Outputs:
+;   Program is parsed and run. Any homescreen hooks present before the routine are called are restored.
+;   b = 0 for an error, errorcode otherwise.
+;Destroyed:
+;   All
+   in a,(2)
+   rla
+   sbc a,a
+   out (20h),a
+   xor    a
+   ld     (HomeSaveA),a
+   bit    appWantHome,(iy+sysHookFlg)
+   jr     z,NoHookToSave
+   ld     hl,(9B8Ch)
+   ld     (HomeSaveHL),hl
+   ld     a,(9B8Eh)
+   ld     (HomeSaveA),a
+NoHookToSave:
+   in     a,(6)
+   ld     hl,HookAddr
+   bcall(_SetHomeHook)
+   set    progExecuting,(iy+newDispF)
+   set    cmdExec,(iy+cmdFlags)
+   AppOnErr(ErrorHandler)
+   bcall(_ParseInp)
+   AppOffErr
+   xor a
+ErrorHandler:
+   push af
+   bcall(_ReloadAppEntryVecs)
+   res    progExecuting,(iy+newDispF)
+   res    cmdExec,(iy+cmdFlags)
+   pop bc
+FinishCont:
+   push bc
+   bcall(_ClrHomeHook)
+   bcall(_ForceFullScreen)
+   res AppWantHome,(iy+sysHookFlg)
+   pop bc
+RestoreHookStuff:
+   push bc
+   ld     a,(HomeSaveA)
+   or     a
+   pop bc
+   ret    z
+   push bc
+   ld     a,(HomeSaveA)
+   ld     hl,(HomeSaveHL)
+   bcall(_SetHomeHook)
+   set AppWantHome,(iy+sysHookFlg)
+   pop bc
+   ret
+
+HookAddr:
+   add    a,e
+   cp     3
+   ret nz
+   bit    appInpPrmptDone,(iy+apiFlg2)
+   res    appInpPrmptDone,(iy+apiFlg2)
+   ld b,0
+   jr     z,FinishCont
+   bcall(_ReloadAppEntryVecs)
+   ld     hl,appvecs
+   bcall(_AppInit)
+   or     1
+   ld     a,cxExtApps
+   ld     (cxCurApp),a
+   ret
+appvecs:
+   .dw     dummyret
+   .dw     saveshad
+   .dw     putway
+   .dw     rdisp
+   .dw     dummyret
+   .dw     dummyret
+rdisp:
+   bcall(_RstrShadow)
+dummyret:
+   ret
+saveshad:
+   bcall(_SaveShadow)
+   ret
+putway:
+   xor    a
+   ld     (currLastEntry),a
+   bit    appInpPrmptInit,(iy+apiFlg2)
+   jr     nz,aipi
+   bcall(_ClrHomeHook)
+   bcall(_ForceFullScreen)
+aipi:
+   bcall(_ReloadAppEntryVecs)
+   bcall(_PutAway)
+   ld b,0
+   jr     RestoreHookStuff

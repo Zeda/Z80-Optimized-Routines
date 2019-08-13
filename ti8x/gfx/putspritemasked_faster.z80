@@ -1,0 +1,88 @@
+;Masked Sprite routine
+;This is a routine by Fallen Ghost, as a response to Kerm's routine.
+;NOTE: Uses shadow registers!
+
+PutMask:
+;Inputs:
+;   a = X coordinate
+;   l = Y coordinate
+;   b= height of sprite
+;   ix = sprite address
+;   ix+b = mask address (same length as sprite, please)
+;
+;Outputs:
+;   Mask and then sprite displayed at specified location on the graph buffer
+;
+;Destroys:
+;   AF, BC, DE, HL, IX, DE', HL' (shadow registers)
+;
+;Improvements from Kerm's DCS version:
+;   -Permits any height sprite
+;   -4 bytes less
+;   -Faster 
+   ld   e,l
+   ld   h,000h
+   ld   d,h
+   add   hl,de
+   add   hl,de
+   add   hl,hl
+   add   hl,hl
+   ld   e,a
+   and   007h
+   ld   c,a
+   srl   e
+   srl   e
+   srl   e
+   add   hl,de
+   ld   de,plotSScreen
+   add   hl,de
+   ld a,b
+   exx
+   ld d,0
+   ld e,a
+   push IX
+   pop HL
+   add hl,de
+   ex de,hl
+   exx
+putMaskLoop1:
+   ld   d,(ix)
+   ld   e,00h
+   exx
+   ld      h,0FFh
+   ld      a,(de)
+   ld      l,a
+   inc de
+   exx
+   ld   a,c
+   or   a
+   jr   z,putMaskSkip1
+putMaskLoop2:
+   srl   d
+   rr   e
+   exx
+   SCF
+   rr l
+   rr h
+   exx
+   dec   a
+   jr   nz,putMaskLoop2
+putMaskSkip1:
+   ld   a,(hl)
+   exx
+   and l
+   exx
+   or   d
+   ld   (hl),a
+   inc   hl
+   ld   a,(hl)
+   exx
+   and     h
+   exx
+   or   e
+   ld   (hl),a
+   ld   de,00Bh
+   add   hl,de
+   inc   ix
+   djnz   putMaskLoop1
+   ret
