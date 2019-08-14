@@ -1,34 +1,85 @@
-;Fast Vertical Line
-;Created by calc84maniac
-
-vertical:
+verticalline_black:
 ;Input:
-;   A is the column number
+;   A is y0
+;   D is the height
+;   C is x0
 ;Output:
-;   Vertical line at column A
-;Destroys:
-;   AF, BC, DE, HL
- ld hl,plotsscreen
- ld d,0
- ld e,a
- srl e
- srl e
- srl e
- add hl,de
- and $07
- ld b,a
- inc b
- ld a,1
-vertloop1:
- rrca
- djnz vertloop1
- ld c,a
- ld b,64
- ld e,12
-vertloop2:
- ld a,c
- or (hl)
- ld (hl),a
- add hl,de
- djnz vertloop2
- ret
+;   Black vertical line from (A,C) to (A,C+D-1)
+;NOTE: This does not do any clipping. You can frick stuff up.
+  call verticalline_sub
+  ret z
+_:
+  ld a,c
+  or (hl)
+  ld (hl),a
+  add hl,de
+  djnz -_
+  ret
+
+verticalline_white:
+;Input:
+;   A is y0
+;   D is the height
+;   C is x0
+;Output:
+;   White vertical line from (A,C) to (A,C+D-1)
+;NOTE: This does not do any clipping. You can frick stuff up.
+  call verticalline_sub
+  ret z
+_:
+  ld a,c
+  cpl
+  and (hl)
+  ld (hl),a
+  add hl,de
+  djnz -_
+  ret
+
+verticalline_invert:
+;Input:
+;   A is y0
+;   D is the height
+;   C is x0
+;Output:
+;   Inverted vertical line from (A,C) to (A,C+D-1)
+;NOTE: This does not do any clipping. You can frick stuff up.
+  call verticalline_sub
+  ret z
+_:
+  ld a,c
+  xor (hl)
+  ld (hl),a
+  add hl,de
+  djnz -_
+  ret
+
+verticalline_sub:
+  ld h,0
+  ld b,h
+  ld l,a
+  add a,a
+  add a,l
+  ld l,a
+  add hl,hl
+  add hl,hl
+  ld a,c
+  srl c
+  srl c
+  srl c
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+
+  and 7
+  ld b,a
+  ld a,$80
+  jr z,+_
+  rrca
+  djnz $-1
+_:
+  ld b,d
+  ld c,a
+  inc b
+  dec b
+  ld de,12
+  ret
