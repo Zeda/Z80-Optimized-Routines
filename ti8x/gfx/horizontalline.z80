@@ -1,26 +1,190 @@
-;Fast Horizontal Line
-;Optimized by Fallen Ghost, from calc84maniac's routine
+;Contains 3 routines and 1 subroutine.
+;horizontalline_black
+;    Draws a black horizontal line
+;horizontalline_white
+;    Draws a white horizontal line
+;horizontalline_invert
+;    Draws an inverted horizontal line
+;horizontalline_sub
+;    A routine common to the others that calculates masks and pointers.
 
-horizontal:
+horizontalline_black:
 ;Input:
-;   A is the row
+;   A is y0
+;   D is the width
+;   C is x0
 ;Output:
-;   Horizontal line at A
-;Destroys:
-;   AF,BC,HL
+;   Black horizontal line from (A,C) to (A,C+D-1)
+;NOTE: This does not do any clipping. You can frick stuff up.
+  call horizontalline_sub
+  jr z,horizontalline_black_small
+  ld d,b
+  ld b,a
+  ld a,(hl)
+  or c
+  ld (hl),a
+  inc hl
+  dec b
+  jr z,horizontalline_black_last
+_:
+  ld (hl),$FF
+  inc hl
+  djnz -_
+horizontalline_black_last:
+  ld a,(hl)
+  or d
+  ld (hl),a
+  ret
+horizontalline_black_small:
+  ld a,c
+  and b
+  or (hl)
+  ld (hl),a
+  ret
 
- ld l,a
- ld h,0
- add a,a
- add a,l
- ld l,a
- add hl,hl
- add hl,hl
- ld bc,plotsscreen
- add hl,bc
- ld b,12
-horizloop:
- ld (hl),%11111111
- inc hl 
- djnz horizloop
- ret
+
+horizontalline_white:
+;Input:
+;   A is y0
+;   D is the width
+;   C is x0
+;Output:
+;   white horizontal line from (A,C) to (A,C+D-1)
+;NOTE: This does not do any clipping. You can frick stuff up.
+  call horizontalline_sub
+  jr z,horizontalline_white_small
+  ld d,b
+  ld b,a
+  ld a,c
+  cpl
+  and (hl)
+  ld (hl),a
+  inc hl
+  dec b
+  jr z,horizontalline_white_last
+_:
+  ld (hl),0
+  inc hl
+  djnz -_
+horizontalline_white_last:
+  ld a,d
+  cpl
+  and (hl)
+  ld (hl),a
+  ret
+horizontalline_white_small:
+  ld a,c
+  and b
+  cpl
+  and (hl)
+  ld (hl),a
+  ret
+
+
+horizontalline_invert:
+;Input:
+;   A is y0
+;   D is the width
+;   C is x0
+;Output:
+;   invert horizontal line from (A,C) to (A,C+D-1)
+;NOTE: This does not do any clipping. You can frick stuff up.
+  call horizontalline_sub
+  jr z,horizontalline_invert_small
+  ld d,b
+  ld b,a
+  ld a,(hl)
+  xor c
+  ld (hl),a
+  inc hl
+  dec b
+  jr z,horizontalline_invert_last
+_:
+  ld a,(hl)
+  cpl
+  ld (hl),a
+  inc hl
+  djnz -_
+horizontalline_invert_last:
+  ld a,(hl)
+  xor d
+  ld (hl),a
+  ret
+horizontalline_invert_small:
+  ld a,c
+  and b
+  xor (hl)
+  ld (hl),a
+  ret
+
+
+horizontalline_sub:
+;Input:
+;   A is y0
+;   D is the width
+;   C is x0
+;Output:
+;   A is the width in bytes of the line
+;   C is the left mask
+;   B is the right mask
+;   HL points to where to begin drawing.
+;   z flag is set if the line starts and ends on the same byte.
+
+;First compute the address of the byte to start drawing at.
+  ld h,0
+  ld b,h
+  ld l,a
+  add a,a
+  add a,l
+  ld l,a
+  add hl,hl
+  add hl,hl
+  ld a,c
+  ld e,c    ;for safe keeping
+  srl c
+  srl c
+  srl c
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+
+;Now compute the left mask
+  and 7
+  ld b,a
+  ld a,$FF
+  jr z,+_
+  rra
+  djnz $-1
+_:
+;Increment A and invert
+  inc a
+  cpl
+  ld c,a    ;C is the left mask
+
+;now compute the right mask at E+D-1
+  ld a,d
+  add a,e
+  dec a
+  ld d,a
+  and 7
+  ld b,a
+  ld a,$7F
+  jr z,+_
+  rrca
+  djnz $-1
+_:
+  inc a
+  ld b,a    ;B is the right mask
+
+;Now compute the width in bytes of the line
+;(D>>3)-(E>>3)
+  ld a,d
+  and %11111000
+  rrca
+  rrca
+  rrca
+  srl e
+  srl e
+  srl e
+  sub e
+  ret
