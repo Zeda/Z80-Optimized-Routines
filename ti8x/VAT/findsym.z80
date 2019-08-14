@@ -1,0 +1,64 @@
+;This routine has four useful entry points, especially findSymBC!
+
+FindSym:
+;Inputs:
+;     OP1+1 contains the name of a symbol var. No type byte needed.
+;Outputs:
+;     Same as rFindSym
+  ld de,OP1+1
+
+FindVarSymDE:
+;Inputs:
+;     DE points to the name of a symbol var
+;Outputs:
+;     Same as rFindSym
+  ex de,hl
+
+FindVarSymHL:
+;Inputs:
+;     HL points to the name of a symbol var
+;Outputs:
+;     Same as rFindSym
+  ld c,(hl)
+  inc hl
+  ld b,(hl)
+
+findSymBC:
+;Inputs:
+;     BC contains the name of the var to search.
+;     For example, if BC was 00AAh, it would search for Str1.
+;Outputs:
+;     Same as rFindSym
+
+  ld hl,symtable-6
+SearchLoop:
+  ld a,c
+  cp (hl)
+  dec hl
+  jr nz,advance_VATsym_ptr
+  ld a,b
+  cp (hl)
+  jr z,Sym_Entry_found
+advance_VATsym_ptr:
+  ld de,-8
+  add hl,de
+  ex de,hl
+  ld hl,(progPtr)
+  sbc hl,de
+  ex de,hl
+  jr c,SearchLoop
+  scf
+Sym_Entry_found:
+  inc hl
+  inc hl
+  ld b,(hl)
+  inc hl
+  ld d,(hl)
+  inc hl
+  ld e,(hl)
+  inc hl
+  inc hl
+  inc hl
+  ld a,(hl)
+  ld c,3
+  ret

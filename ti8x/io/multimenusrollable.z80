@@ -1,0 +1,344 @@
+;Created by arriopolis
+;
+;Input:
+;Via the code stream, using the following "syntaxis":
+;
+;Code:
+;    CALL Menu
+;    .DB 2         ;Number of menus
+;    .DB "Tit1", 0 ;Title of menu1
+;    .DB "Tit2", 0 ;Title of menu2
+;    .DB 3         ;Number of options in menu1
+;    .DB 4         ;Number of options in menu2
+;    .DB "Opt1", 0 \ .DW Lbl1 ;Optiontext + Lable to jump to when selected.
+;    .DB "Opt2", 0 \ .DW Lbl2
+;    .DB "Opt3", 0 \ .DW Lbl3
+;    .DB "U", 0 \ .DW LblU
+;    .DB "R", 0 \ .DW LblR
+;    .DB "2", 0 \ .DW LblToo
+;    .DB "Fat", 0 \ .DW LblFat  ;Sorry, could not resist.
+;Lbl1: Code
+;Lbl2: Code
+;Lbl3: Code
+;LblU: Code
+;LblR: Code
+;LblToo: Code
+;LblFat: Code
+;
+;
+;Output: PC: The desired lable.
+;Registers destroyed: AF, BC, DE, HL, IX
+;Size: Huge.
+;Remarks: Does reset AppAutoScroll and TextInverse.
+;I'm sure there are numurous optimizations possible, so do not hesitate to inform me.
+
+Menu:
+;- Objective: Create a scrollable menu, with multiple titles possible.
+;- INPUT: Data from codestream.
+;- Variables:
+;  - Current menu selected = IXL
+;  - Current option selected = B
+;  - Number of menus = IXH
+;  - Number of options = C
+;  - Current option at first row = D
+    RES AppAutoScroll, (IY + AppFlags)
+    POP HL            ;Gain the baseaddress of the input data.
+    LD C, 1
+    LD IXL, C            ;IXL = Current menu selected.
+    LD C, (HL)
+    LD IXH, C            ;IXH = Number of menus.
+    INC HL
+    LD (MenuTitleAddress), HL
+    LD B, C
+    CALL MenuSkipMenus         ;B = Number of menus; becomes 0.
+    LD (MenuNrOptionsAddress), HL
+    ADD HL, BC            ;B = 0, C = Number of menus, so BC = number of menus
+    LD (MenuOptionsAddress), HL
+;Now, HL is at the beginning of the optionslist.
+
+MenuDrawMenu:
+    b_call(_ClrLCDFull)
+    b_call(_HomeUp)
+    LD HL, (MenuTitleAddress)
+    LD C, IXL            ;Now C = Current menu selected.
+    LD B, IXH            ;Now B = Number of menus.
+    LD A, " "            ;Now A = A space, to put inbetween the menus.
+MenuDrawMenuTitle:
+    DEC C
+    CALL NZ, TextInverseOff
+    CALL Z, TextInverseOn
+    b_call(_PutS)         ;Draw the title
+    CALL TextInverseOff
+    b_call(_PutC)         ;Put a space inbetween
+    DJNZ MenuDrawMenuTitle      ;Do this "number of menus" times, B is left 0.
+;Now to get the number of options etc.
+    LD HL, (MenuOptionsAddress)
+    LD C, IXL
+    DEC C
+    JR Z, MenuNoSkipMenu
+    LD DE, (MenuNrOptionsAddress)
+MenuSkipMenu:
+    LD A, (DE)
+    LD B, A
+    CALL MenuSkipOptions      ;Makes sure B = 0
+    INC DE
+    DEC C
+    JR NZ, MenuSkipMenu
+MenuNoSkipMenu:
+    LD (Temp), HL
+    LD C, IXL
+    DEC C
+    LD HL, (MenuNrOptionsAddress)
+    ADD HL, BC            ;B = 0, so BC = C = Number of menus.
+    LD C, (HL)            ;C = Number of options.
+    LD B, 1            ;D = Current option at first row
+    LD D, B            ;B = Current option selected
+
+MenuDrawText:
+    LD HL, $0001
+    LD (CurRow), HL
+    LD HL, (Temp)
+    PUSH BC
+    LD B, D            ;Now B = Option at row 1.
+    DEC B
+    CALL NZ, MenuSkipOptions      ;If row 1 is not 1, then skip the options before the one at row1.
+    LD B, 7
+    LD E, D            ;Start off with the option at row1.
+MenuDrawTextOptions:
+    LD A, E
+    CP C            ;If there is no more option to write, abort.
+    JR Z, MenuDrawTextOptionsCont
+    JR NC, MenuDrawTextNoMore
+MenuDrawTextOptionsCont:
+    LD A, 2
+    LD (CurCol), A
+    b_call(_PutS)         ;Wrtite em.
+MenuDrawTextOptionsSpaces:
+    LD A, (CurCol)
+    OR A
+    JR Z, MenuDrawTextOptionsSpacesEnd
+    LD A, " "
+    b_call(_PutC)
+    JR MenuDrawTextOptionsSpaces
+MenuDrawTextOptionsSpacesEnd:
+    INC E
+    INC HL
+    INC HL
+    DJNZ MenuDrawTextOptions      ;7 times.
+MenuDrawTextNoMore:
+    POP BC
+
+MenuDrawOptions:
+    LD HL, $0001
+    LD (CurRow), HL
+    PUSH BC            ;Save B and C temporarely, but copy B into E, because we want to use B again soon.
+    LD E, B
+    LD A, D            ;Begin with the option at row1.
+    LD B, 7            ;7 options to write max.
+MenuDrawOptionsLoop:
+    PUSH AF            ;Save AF for further use (A = current option drawn).
+    PUSH AF
+    CP E
+    CALL Z, TextInverseOn
+    CALL NZ, TextInverseOff
+    ADD A, $30            ;Add the number of bytes to get to the correct symbols.
+    CP $3A
+    JR Z, MenuDrawOptionsZero
+    JR C, MenuDrawOptionsLoopNumber
+    ADD A, 6            ;6 to get to the lettersymbols.
+    JR MenuDrawOptionsLoopNumber
+MenuDrawOptionsZero:
+    LD A, L0
+MenuDrawOptionsLoopNumber:
+    b_call(_PutC)
+    POP AF
+    CP D            ;If TopOption = CurOption, then top option is being drawn.
+    JR NZ, MenuDrawOptionsCont
+    CP 1            ;If TopOption = CurOption = 1, no uparrow.
+    JR Z, MenuDrawOptionsCont2
+    LD A, LUpArrow
+    JR MenuDrawOptionsLoopCont
+MenuDrawOptionsCont:
+    CP C            ;If CurOption = Number of options
+    JR Z, MenuDrawOptionsCont2
+    LD A, (CurRow)
+    CP 7
+    JR NZ, MenuDrawOptionsCont2
+    LD A, LDownArrow
+    JR MenuDrawOptionsLoopCont
+MenuDrawOptionsCont2
+    LD A, ":"
+MenuDrawOptionsLoopCont:
+    b_call(_PutC)
+    b_call(_NewLine)
+    POP AF
+    INC A
+    CP C
+    JR Z, MenuDrawOptionsLoopEnd
+    JR NC, MenuDrawOptionsEnd
+MenuDrawOptionsLoopEnd:
+    DJNZ MenuDrawOptionsLoop
+MenuDrawOptionsEnd:
+    POP BC
+    CALL TextInverseOff
+
+MenuUserInput:
+    LD E, C
+    PUSH DE
+    b_call(_getKey)
+    POP DE
+    LD C, E
+    CP kDown
+    JR Z, MenuDown
+    CP kUp
+    JR Z, MenuUp
+    CP kLeft
+    JR Z, MenuLeft
+    CP kRight
+    JP Z, MenuRight
+    CP kEnter
+    JR Z, MenuEnter
+    CP kVarx
+    JR NC, MenuUserInput
+    SUB k0
+    JR C, MenuUserInput
+    JR NZ, MenuUserInputNotZero
+    LD A, 10
+    JR MenuUserInputNumber
+MenuUserInputNotZero:
+    CP 10
+    JR C, MenuUserInputNumber
+    DEC A
+MenuUserInputNumber:
+    CP C
+    JR Z, MenuUserInputNumberCont
+    JR NC, MenuUserInput
+MenuUserInputNumberCont
+    LD B, A
+
+MenuEnter:
+    LD HL, (MenuOptionsAddress)
+    PUSH BC
+    LD B, IXL
+    DEC B
+    JR Z, MenuEnterSkipSkipLoop
+    LD DE, (MenuNrOptionsAddress)
+    LD C, 0
+MenuEnterSkipLoop:
+    LD A, (DE)
+    ADD A, C
+    LD C, A
+    INC DE
+    DJNZ MenuEnterSkipLoop
+    LD B, C
+    CALL MenuSkipOptions
+MenuEnterSkipSkipLoop:
+    POP BC
+    CALL MenuSkipOptions
+    DEC HL
+    LD A, (HL)
+    LD D, A
+    DEC HL
+    LD A, (HL)
+    LD E, A
+    EX DE, HL
+    JP (HL)               ;Exit routine.
+
+MenuDown:
+    LD A, B
+    CP C
+    JR Z, MenuDownWrap
+    INC B
+    LD A, B
+    SUB D
+    CP 7
+    JP NZ, MenuDrawOptions
+    INC D
+    JP MenuDrawText
+MenuDownWrap:
+    LD B, 1
+    LD D, B
+    JP MenuDrawText
+
+MenuUp:
+    LD A, B
+    DEC A
+    JR Z, MenuUpWrap
+    LD A, B
+    CP D
+    PUSH AF
+    DEC B
+    POP AF
+    JP NZ, MenuDrawOptions
+    DEC D
+    JP MenuDrawText
+MenuUpWrap:
+    LD B, C
+    LD A, C
+    SUB 6
+    LD D, A
+    JP NC, MenuDrawText
+    LD D, 1
+    JP MenuDrawText
+
+MenuLeft:
+    LD D, 1
+    LD B, 0
+    DEC IXL
+    JR NZ, MenuLeftCont
+    LD IXL, IXH
+MenuLeftCont:
+    LD C, IXL
+    DEC C
+    LD HL, (MenuNrOptionsAddress)
+    ADD HL, BC
+    LD C, (HL)
+    INC B
+    JP MenuDrawMenu
+
+MenuRight:
+    LD D, 1
+    LD B, 0
+    LD A, IXL
+    CP IXH
+    JR NZ, MenuRightCont
+    LD IXL, 0
+MenuRightCont:
+    INC IXL
+    LD C, IXL
+    DEC C
+    LD HL, (MenuNrOptionsAddress)
+    ADD HL, BC
+    LD C, (HL)
+    INC B
+    JP MenuDrawMenu
+
+TextInverseOn:
+    SET TextInverse, (IY + TextFlags)
+    RET
+TextInverseOff:
+    RES TextInverse, (IY + TextFlags)
+    RET
+
+MenuSkipOptions:
+    LD A, (HL)
+    INC HL
+    OR A
+    JR NZ, MenuSkipOptions
+    INC HL
+    INC HL               ;Skip labelbytes.
+    DJNZ MenuSkipOptions
+    RET
+
+MenuSkipMenus:
+    LD A, (HL)
+    INC HL
+    OR A
+    JR NZ, MenuSkipMenus
+    DJNZ MenuSkipMenus
+    RET
+
+MenuTitleAddress:      .DW 0
+MenuNrOptionsAddress:  .DW 0
+MenuOptionsAddress:    .DW 0
+Temp:                  .DW 0

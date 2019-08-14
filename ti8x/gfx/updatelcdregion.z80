@@ -1,0 +1,98 @@
+;Updates a region of the LCD
+;created by rayden
+
+updatelcdregion:
+SoftUpdate:
+;Inputs
+;H -> xpos/8 this value ranges from 0 to 12 this because softupdate only updates bytes not bit's....
+;L -> ypos
+;C-> width
+;B -> height
+
+  DI ;// Disable software interrupts
+  IN A,($20)
+  PUSH AF
+  XOR A
+  OUT ($20),A
+  LD A,$20
+  ADD A,H ;// grab Xcoord
+  OUT ($10),A ;// Set Colum
+  LD IXH,A ;// IXH with the Xcoord
+  LD A,$80
+  ADD A,L ;// grab Ycoord
+  PUSH HL ;// waste time
+  POP HL ;// waste time
+  PUSH HL ;// waste time
+  POP HL ;// waste time
+  OUT ($10),A ;// Set Row
+  LD IXL,A ;// IXL with the Ycoord
+  ;// B with the data to output
+  ;// now grab the address on the buffer
+  LD A,H ;// save H or Xcoord
+  LD D,0
+  LD H,D
+  LD E,L
+  ADD HL,HL ;// x2
+  ADD HL,DE ;// buffer pointer + ycoord
+  ADD HL,HL ;// x4
+  ADD HL,HL ;// x8
+  LD E,A
+  ADD HL,DE ;// Add Xpos
+  LD DE,_plotSScreen
+  ADD HL,DE ;// now we have the address on the buffer
+  ;// Prepare for Starting Writing To Screen
+  LD A,$07
+  OUT ($10),A
+  LD DE,12 ;// at the end of eatch row we add 12 or the address to the next row
+WritingColum: ;// we know that at the end of eatch row we must go back and add 12
+  PUSH HL ;// save HL temporarly
+  PUSH BC
+  LD B,C ;// now loop for B
+WritingRow:
+  PUSH DE ;// waste 11
+  LD A,(HL) ;// 7
+  INC HL ;// 4
+  INC HL ;// 4
+  INC HL ;// 4
+  DEC HL ;// 4
+  DEC HL ;// 4
+  POP DE ;// waste 10
+  ;PUSH HL
+  ;POP HL
+  ;PUSH HL
+  ;POP HL
+  OUT ($11),A ;// send a command true the port
+  DJNZ WritingRow ;// 13
+  LD A,IXH ;// restore Xcoord
+  PUSH HL
+  POP HL
+  nop
+  nop
+  nop
+  nop
+  OUT ($10),A ;// write it now
+  POP BC ;// restore BC
+  POP HL ;// restore DE
+  ADD HL,DE ;//
+  ;PUSH HL ;// waste time
+  ;POP HL ;// waste time
+  nop
+  nop
+  nop
+
+  INC IXL
+  LD A,IXL
+  OUT ($10),A
+  DJNZ WritingColum ;// now write another colum
+  PUSH HL
+  POP HL
+  PUSH HL
+  POP HL
+  ;PUSH HL
+  ;POP HL
+  LD A,$05
+  OUT ($10),A
+  POP AF
+  OUT ($20),A
+  EI ;// enable software interrupts
+  RET ;// go back screen updated

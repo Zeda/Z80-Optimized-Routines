@@ -1,0 +1,50 @@
+;Converts an 8-bit signed integer to a string
+
+itoa_8:
+;Input:
+;   A is a signed integer
+;   HL points to where the null-terminated ASCII string is stored (needs at most 5 bytes)
+;Output:
+;   The number is converted to a null-terminated string at HL
+;Destroys:
+;   Up to five bytes at HL
+;   All registers preserved.
+;min: 229cc
+;max: 511cc
+;avg: 372.139375cc
+;60 bytes
+  push hl
+  push de
+  push bc
+  push af
+  or a
+  jp p,itoa_pos
+  neg
+  ld (hl),$1A  ;start if neg char on TI-OS
+  inc hl
+itoa_pos:
+;A is on [0,128]
+;calculate 100s place, plus 1 for a future calculation
+  ld d,1
+  cp 100 \ jr c,$+5 \ sub 100 \ inc d
+
+;calculate 10s place digit, +1 for future calculation
+  ld c,0
+  inc c \ sub 10 \ jr nc,$-3
+  ld b,a
+
+;Digits are now in D, C, A
+; strip leading zeros!
+  dec d \ jr z,$+9 \ ld a,d \ add a,'0' \ ld (hl),a \ inc hl \ dec c \ .db $FE  ; start of `cp *` to skip the next byte, turns into `cp 13` which will always return nz and nc
+  dec c \ jr z,$+7 \ ld a,c \ add a,'0' \ ld (hl),a \ inc hl
+  ld a,b
+  add a,'0'+10
+  ld (hl),a
+  inc hl
+  ld (hl),0
+
+  pop af
+  pop bc
+  pop de
+  pop hl
+  ret

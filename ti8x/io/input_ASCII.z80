@@ -1,0 +1,647 @@
+;Created by arriopolis
+; Inputroutine:
+; Input:
+; - DE = Start of address for the string to be stored to.
+; - C = The maximum number of characters.
+; Output: String at initial DE.
+; Remarks: This inputroutine works with letters instead of tokens, so multiletter symbols like sin( aren't included.
+; Registers destroyed: AF, BC, DE, HL, IX, I.
+; Setup:
+; Since this routine uses its own Interrupt Service Routine, you need to include that one too. I've placed it at $9D9D, meaning you've gotta place it near the beginning of the program. I usually do something lik this:
+;
+; Code:
+; <Usual crap>
+;     .DB t2ByteTok, tAsmCmp
+;     b_call(_ClrLCDFull)
+;     b_call(_HomeUp)
+;     JR Start
+; <InputISR goes here>
+; Start:
+;
+; This makes sure the InputISR is in its correct location. Here is the InputISR:
+;
+; InputISR:         ;$9D9D
+;     EX AF, AF'
+;     EXX
+;     XOR A
+;     OUT (3), A
+;     LD HL, CurTime
+;     INC (HL)
+;     LD A, $32
+;     CP (HL)
+;     JR NZ, InputNoblink
+;     LD (HL), 0
+;     LD A, (IY + CurFlags)
+;     XOR %00001000
+;     LD (IY + CurFlags), A
+; InputNoblink:
+;     LD A, %00001010
+;     OUT (3), A
+;     EXX
+;     EX AF, AF'
+;     EI
+;     RET
+;
+
+Input:
+;INPUTROUTINE: Asks user to enter characters.
+;INPUT:
+;- IX = Address of string      (Constant)
+;- C  = Maximum amount of characters   (Constant)
+;VARIABLES:
+;- Cursorplace: (CurRow)&(CurCol)
+;- Length of string: B
+;- Current character: E
+;- 2nd & Alpha: Shiftflags
+;- Cursorblink: (CurTime)
+;OUTPUT:
+;- String at InputData (DE = Crap at the end)
+;- Carry if error
+;PSEUDOCODE:
+;- Wait for keypress
+;  - If Clear: Delete all
+;  - If Del:   Delete current charachter
+;  - If Left:  Move cursor left if possible
+;  - If Right: Move cursor right if possible
+;  - If Up:    Move cursor up if possible
+;  - If Down:  Move cursor down if possible
+;  - If Enter: Exit without error
+;- Convert to charachter
+;- Check insertflag
+;  - If Insert, insert the character
+;  - If not, overwrite the character
+;- Return to begin
+;OTHER DATA:
+;- Keyport (1):
+;                  +-------------------------------------------------------------------------------------------------------------------------------+
+;                  ¦                                                             Read:                                                             ¦
+;                  +-------------------------------------------------------------------------------------------------------------------------------¦
+;                  ¦$FE = %11111110¦$FD = %11111101¦$FB = %11111011¦$F7 = %11110111¦$EF = %11101111¦$DF = %11011111¦$BF = %10111111¦$7F = %01111111¦
+;+-----------------+---------------+---------------+---------------+---------------+---------------+---------------+---------------+---------------¦
+;¦ ¦$BF = %10111111¦    [GRAPH]    ¦    [TRACE]    ¦    [ZOOM]     ¦   [WINDOW]    ¦     [Y=]      ¦     [2nd]     ¦    [MODE]     ¦     [DEL]     ¦
+;¦W¦$DF = %11011111¦               ¦     [STO]     ¦     [LN]      ¦     [LOG]     ¦     [X²]      ¦     [X-1]     ¦    [MATH]     ¦    [ALPHA]    ¦
+;¦R¦$EF = %11101111¦      [0]      ¦      [1]      ¦      [4]      ¦      [7]      ¦      [,]      ¦     [SIN]     ¦    [APPS]     ¦   [X,T,Q,n]   ¦
+;¦I¦$F7 = %11110111¦      [.]      ¦      [2]      ¦      [5]      ¦      [8]      ¦      [)]      ¦     [COS]     ¦    [PRGM]     ¦    [STAT]     ¦
+;¦T¦$FB = %11111011¦     [(-)]     ¦      [3]      ¦      [6]      ¦      [9]      ¦      [(]      ¦     [TAN]     ¦    [VARS]     ¦               ¦
+;¦E¦$FD = %11111101¦    [ENTER]    ¦      [+]      ¦      [-]      ¦      [X]      ¦      [/]      ¦      [^]      ¦    [CLEAR]    ¦               ¦
+;¦ ¦$FE = %11111110¦    [DOWN]     ¦    [LEFT]     ¦    [RIGHT]    ¦     [UP]      ¦               ¦               ¦               ¦               ¦
+;+-------------------------------------------------------------------------------------------------------------------------------------------------+
+    LD B, 0                           ;String has 0 characters at first
+    LD E, 0                           ;We have character 0 selected at first
+    PUSH BC                           ;Save settings
+    PUSH IX
+    PUSH DE
+    RES Shift2nd, (IY + ShiftFlags)
+    RES ShiftAlpha, (IY + ShiftFlags)
+    RES ShiftLwrAlph, (IY + ShiftFlags)
+    RES ShiftALock, (IY + ShiftFlags)
+    RES TextInsMode, (IY + TextFlags)
+
+    SET CurOn, (IY + CurFlags)      ;Set up interrupt
+    DI
+    LD A, 0
+    LD (CurTime), A
+    LD A, $99            ;AppBackupScreen is at $9872
+    LD I, A
+    LD HL, $9900         ;Load Vector Table, $9900 - $99FF
+    LD (HL), $9D
+    LD D, H
+    LD E, 1
+    LD BC, 256
+    LDIR
+    LD A, %00001010
+    OUT (3), A
+    IM 2
+    EI               ;Enable the interrupts again
+
+InputKey:
+    BIT CurOn, (IY + CurFlags)
+    JR Z, InputNoCursor
+    BIT Shift2nd, (IY + ShiftFlags)
+    JR Z, InputNot2nd
+    BIT TextInsMode, (IY + TextFlags)
+    JR NZ, Input2ndIns
+    LD A, $E1            ;$E1 = Shiftcursor
+    JR InputCursorDisp
+Input2ndIns:
+    LD A, $E5
+    JR InputCursorDisp
+InputNot2nd:
+    BIT ShiftAlpha, (IY + ShiftFlags)
+    JR Z, InputNotAlpha
+    BIT TextInsMode, (IY + TextFlags)
+    JR NZ, InputAlphaIns
+    LD A, $E2            ;$E2 = Alphacursor
+    JR InputCursorDisp
+InputAlphaIns:
+    LD A, $E6
+    JR InputCursorDisp
+InputNotAlpha:
+    BIT ShiftLwrAlph, (IY + ShiftFlags)
+    JR Z, InputNotLwrAlph
+    BIT TextInsMode, (IY + TextFlags)
+    JR NZ, InputLwrAlphIns
+    LD A, $E3            ;$E3 = LwrAlphcursor
+    JR InputCursorDisp
+InputLwrAlphIns:
+    LD A, $E7
+    JR InputCursorDisp
+InputNotLwrAlph:
+    BIT TextInsMode, (IY + TextFlags)
+    JR NZ, InputNormIns
+    LD A, $E0            ;$E0 = Cursor
+    JR InputCursorDisp
+InputNormIns:
+    LD A, $E4
+    JR InputCursorDisp
+InputNoCursor:
+    POP DE
+    POP IX
+    LD A, (IX)
+    PUSH IX
+    PUSH DE
+    OR A
+    JR NZ, InputCursorDisp
+    LD A, " "
+InputCursorDisp:
+    b_call(_PutMap)         ;Disables interrupts
+    EI
+
+    LD C, 1            ;b_call(_GetCSC) doesn't work, so let's make our own
+    LD HL, KeyGroups
+InputCheckKeyGroup:
+    LD A, (HL)
+    OUT (C), A
+    LD B, 8            ;7 Cycles, enough to let the keyport respond
+    IN A, (C)
+InputCheckKey:
+    RLCA            ;Load the reset bit into carry
+    JR NC, InputKeyRead
+    DJNZ InputCheckKey
+    INC HL
+    LD A, (HL)
+    OR A
+    JR NZ, InputCheckKeyGroup
+    JR InputCont
+
+InputKeyRead:
+    LD DE, KeyGroups         ;Let's find the key selected
+    XOR A            ;Resets Carry flag
+    SBC HL, DE            ;Find keygroup
+    LD A, L            ;HL is not higher than 256, so load it into A
+    SLA A            ;A * 8 --> A...
+    SLA A            ;...because there are 8 keys per group
+    SLA A
+    ADD A, B            ;Add B to A, to distinguish the key selected inside the group
+
+;NOTE: A = the same as the scancodeequates now.
+
+    POP DE
+    CP D
+    PUSH DE
+    JP Z, InputKey         ;If the key pressed is the same, restart
+
+InputCont:
+    POP DE            ;Save last key into D
+    LD D, A
+    PUSH DE
+    JP Z, InputKey         ;If no key was pressed, restart
+
+;--------------------Actual checking of keys--------------------
+    CP skEnter
+    JP Z, InputEnd
+    CP sk2nd
+    JP Z, Input2ndPressed
+    CP skLeft
+    JP Z, InputLeft
+    CP skRight
+    JP Z, InputRight
+    CP skUp
+    JP Z, InputUp
+    CP skDown
+    JP Z, InputDown
+    CP skClear
+    JP Z, InputClear
+    BIT Shift2nd, (IY + ShiftFlags)
+    JR NZ, Input2nd
+    CP skDel
+    JP Z, InputDel
+    BIT ShiftAlpha, (IY + ShiftFlags)
+    JR NZ, InputAlpha
+    BIT ShiftLwrAlph, (IY + ShiftFlags)
+    JR NZ, InputLwrAlph
+    CP skAlpha
+    JP Z, InputAlphaPressed
+    LD HL, NormalLUT
+    JR InputCharCheck
+
+Input2nd:
+    CP skAlpha
+    JP Z, Input2ndAlphaPressed
+    CP skDel
+    JP Z, InputIns
+    LD HL, 2ndLUT
+    JR InputCharCheck
+
+InputAlpha:
+    CP skAlpha
+    JP Z, InputAlphaAlphaPressed
+    LD HL, AlphaLUT
+    JR InputCharCheck
+
+InputLwrAlph:
+    CP skAlpha
+    JP Z, InputLwrAlphAlphaPressed
+    LD HL, LwrAlphLUT
+
+InputCharCheck:
+    SUB 10            ;Cut down size for the LUT
+    JP C, InputKey
+    CP 38
+    JP NC, InputKey
+    LD C, A            ;Load the address for the LUT
+    LD B, 0
+    ADD HL, BC
+    LD A, (HL)            ;Load character in A
+    OR A            ;If character is not valid...
+    JP Z, InputKey         ;Abort
+    POP DE
+    POP IX
+    POP BC
+    PUSH AF
+    LD A, E
+    CP C            ;If the maximum characters is reached...
+    JR Z, InputCharAbort      ;...Abort
+    CP B            ;If we are dealing with the last character...
+    JR Z, InputCharCont2
+    BIT TextInsMode, (IY + TextFlags)
+    JR Z, InputCharCont
+InputCharIns:
+    PUSH BC
+    PUSH IX
+    PUSH DE
+    LD A, B
+    SUB E
+    LD C, A
+    LD B, 0
+    ADD IX, BC
+    PUSH IX
+    POP DE
+    DEC IX
+    PUSH IX
+    POP HL
+    LDDR
+    POP DE
+    POP IX
+    POP BC
+    LD HL, (CurRow)
+    PUSH HL
+    PUSH BC
+    PUSH DE
+    LD A, " "
+    b_call(_PutC)
+    PUSH IX
+    POP HL
+    INC HL
+    b_call(_PutS)
+    POP DE
+    POP BC
+    POP HL
+    LD (CurRow), HL
+InputCharCont2:
+    INC B            ;...incline the length of the string
+InputCharCont:
+    INC E            ;Incline the letterpointer
+    POP AF
+    LD (IX), A            ;Load character into string data
+    INC IX            ;Go to next character in string data
+    b_call(_PutC)         ;Display the character
+InputResetFlags:
+    CALL InputResetCursor
+    RES Shift2nd, (IY + ShiftFlags)
+    BIT ShiftALock, (IY + ShiftFlags)
+    JR NZ, InputCharEnd
+    RES ShiftAlpha, (IY + ShiftFlags)
+    RES ShiftLwrAlph, (IY + ShiftFlags)
+InputCharEnd:
+    PUSH BC
+    PUSH IX
+    PUSH DE
+    JP InputKey
+InputCharAbort:
+    POP AF
+    JR InputCharEnd
+
+Input2ndPressed:
+    LD A, (IY + ShiftFlags)
+    XOR 1 << Shift2nd
+    LD (IY + ShiftFlags), A
+    JR InputEndFlag
+
+InputAlphaPressed:
+    SET ShiftAlpha, (IY + ShiftFlags)
+    JR InputEndFlag
+
+Input2ndAlphaPressed:
+    LD A, (IY + ShiftFlags)
+    XOR 1 << ShiftAlock
+    LD (IY + ShiftFlags), A
+    RES Shift2nd, (IY + ShiftFlags)
+    BIT ShiftLwrAlph, (IY + ShiftFlags)
+    JR NZ, InputEndFlag
+    SET ShiftAlpha, (IY + ShiftFlags)
+    JR InputEndFlag
+
+InputAlphaAlphaPressed:
+    RES ShiftAlpha, (IY + ShiftFlags)
+    SET ShiftLwrAlph, (IY + ShiftFlags)
+    JR InputEndFlag
+
+InputLwrAlphAlphaPressed:
+    RES ShiftLwrAlph, (IY + ShiftFlags)
+    RES ShiftALock, (IY + ShiftFlags)
+
+InputEndFlag:
+    CALL InputResetCursor
+    JP InputKey
+
+InputDel:
+    RES TextInsMode, (IY + TextFlags)
+    POP DE
+    POP IX
+    POP BC
+    LD A, E
+    CP B
+    JR Z, InputCharEnd
+    LD HL, (CurRow)
+    PUSH HL
+    PUSH DE
+    PUSH BC
+    PUSH IX
+    PUSH IX
+    POP HL
+    POP DE
+    INC HL
+InputDelMoveLoop:
+    LD A, (HL)
+    OR A
+    LDI
+    JR Z, InputDelMoveLoopEnd
+    b_call(_PutC)
+    JR InputDelMoveLoop
+InputDelMoveLoopEnd:
+    LD A, " "
+    b_call(_PutMap)
+    EI
+    POP BC
+    POP DE
+    POP HL
+    LD (CurRow), HL
+    DEC B
+    CALL InputResetCursor
+    JR InputCharEnd
+
+InputIns:
+    LD A, (IY + TextFlags)
+    XOR 1 << TextInsMode
+    LD (IY + TextFlags), A
+    CALL InputResetCursor
+    RES Shift2nd, (IY + ShiftFlags)
+    JP InputKey
+
+InputClear:
+    POP DE
+    POP IX
+    POP BC
+    LD A, B
+    OR A
+    JP Z, InputClearEnd
+    SUB E
+    PUSH BC
+    LD C, A
+    LD B, 0
+    ADD IX, BC
+    LD HL, CurCol
+    LD B, (HL)
+    ADD A, B
+    LD B, 0
+InputClearCheckWrap:
+    CP 16
+    JR C, InputClearWrapEnd
+    SUB 16
+    INC B
+    JR InputClearCheckWrap
+InputClearWrapEnd:
+    LD (HL), A
+    DEC HL
+    LD A, (HL)
+    ADD A, B
+    LD (HL), A
+    POP BC
+    INC HL
+InputClearLoop:
+    LD (IX), 0
+    DEC IX
+    LD A, " "
+    b_call(_PutMap)
+    LD A, (HL)
+    OR A
+    JR Z, InputClearLoopWrap
+    DEC (HL)
+    JR InputClearLoopEnd
+InputClearLoopWrap:
+    LD (HL), 15
+    DEC HL
+    DEC (HL)
+    INC HL
+InputClearLoopEnd:
+    DJNZ InputClearLoop
+    LD (IX), 0
+    LD E, 0
+InputClearEnd:
+    RES TextInsMode, (IY + TextFlags)
+    JP InputResetFlags
+
+InputLeft:
+    CALL InputResetCursor
+    POP DE
+    POP IX
+    LD A, (IX)
+    OR A
+    JR NZ, InputLeftNotZero
+    LD A, " "
+InputLeftNotZero:
+    b_call(_PutMap)
+    EI
+    LD A, E
+    OR A
+    JR Z, InputLeftEnd
+    DEC E
+    DEC IX
+    LD HL, CurCol
+    LD A, (HL)
+    DEC (HL)
+    OR A
+    JR NZ, InputLeftEnd
+    LD (HL), 15
+    DEC HL
+    DEC (HL)
+InputLeftEnd:
+    PUSH IX
+    PUSH DE
+    RES TextInsMode, (IY + TextFlags)
+    JP InputKey
+
+InputRight:
+    CALL InputResetCursor
+    POP DE
+    POP IX
+    POP BC
+    LD A, (IX)
+    OR A
+    JR NZ, InputRightNotZero
+    LD A, " "
+InputRightNotZero:
+    b_call(_PutMap)
+    EI
+    LD A, E
+    CP B
+    JR Z, InputRightEnd
+    INC E
+    INC IX
+    LD HL, CurCol
+    LD A, (HL)
+    INC (HL)
+    SUB 15
+    JR NZ, InputRightEnd
+    LD (HL), 0
+    DEC HL
+    INC (HL)
+InputRightEnd:
+    PUSH BC
+    PUSH IX
+    PUSH DE
+    RES TextInsMode, (IY + TextFlags)
+    JP InputKey
+
+InputUp:
+    CALL InputResetCursor
+    POP DE
+    POP IX
+    POP BC
+    LD A, (IX)
+    OR A
+    JR NZ, InputUpNotZero
+    LD A, " "
+InputUpNotZero:
+    b_call(_PutMap)
+    EI
+    LD A, E
+    SRL A            ;Divide by 16, to see if there is a row to go up
+    SRL A
+    SRL A
+    SRL A
+    JP Z, InputCharEnd         ;Cancel if on the top row
+    LD A, E
+    SUB 16
+    LD E, A
+    PUSH DE
+    LD HL, CurRow
+    DEC (HL)
+    LD DE, 16
+    OR A
+    PUSH IX
+    POP HL
+    SBC HL, DE
+    PUSH HL
+    POP IX
+    POP DE
+    RES TextInsMode, (IY + TextFlags)
+    JP InputCharEnd
+
+InputDown:
+    CALL InputResetCursor
+    POP DE
+    POP IX
+    POP BC
+    LD A, (IX)            ;Erase the cursor
+    OR A
+    JR NZ, InputDownNotZero
+    LD A, " "
+InputDownNotZero:
+    b_call(_PutMap)
+    EI
+    LD A, E            ;Check if there is any row below the one you're on now
+    SRL A            ;Devide E by 16 to see the current row and store it to H
+    SRL A
+    SRL A
+    SRL A
+    LD H, A
+    LD A, B            ;Devide B by 16 to see the maximum amount of rows
+    SRL A
+    SRL A
+    SRL A
+    SRL A
+    SUB H
+    JP Z, InputCharEnd         ;If they are the same, quit
+    LD HL, CurRow
+    INC (HL)
+    DEC A
+    JR NZ, InputDownNoShift      ;If you are not on the last row, it'll never have to shift <<
+    LD A, B            ;Check if the cursor should go << aswell
+    AND $0F            ;Get the colomn of the final character
+    LD HL, CurCol         ;Get the colomn of the cursor
+    SUB (HL)            ;If ColFin - ColCur < 0, no <<
+    JR NC, InputDownNoShift
+    NEG
+    PUSH BC
+    LD C, A
+    LD B, 0
+    PUSH IX
+    POP HL
+    OR A
+    SBC HL, BC
+    PUSH HL
+    POP IX
+    LD A, (CurCol)
+    SUB C
+    LD (CurCol), A
+    LD BC, 16
+    ADD IX, BC
+    POP BC
+    LD A, B
+    LD E, A
+    JP InputCharEnd
+InputDownNoShift:
+    PUSH DE
+    LD DE, 16
+    ADD IX, DE
+    POP DE
+    LD A, E
+    ADD A, 16
+    LD E, A
+    JP InputCharEnd
+
+InputEnd:
+    POP DE
+    POP IX
+    POP BC
+    DI
+    LD A, %00010011
+    OUT (3), A
+    IM 1
+    EI
+    RET
+
+InputResetCursor:
+    XOR A
+    LD (CurTime), A
+    SET CurOn, (IY + CurFlags)
+    RET
+
+NormalLUT:   .DB "+-*/^", 0, 0, Lneg, "369)", 0, 0, 0, ".258(", 0, 0, 0, "0147,", 0, 0, "X", 0, Lstore, 0, 0, Lsquare, LInverse, 0
+2ndLUT:      .DB 0, "][", Llne, Lpi, 0, 0, 0, 0, 0, "w}", 0, 0, 0, LimagI, 0, 0, "v{", 0, 0, 0, 0, 0, 0, "u", Lexponent, 0, 0, "X", 0, 0, 0, 0, 0, 0, 0
+AlphaLUT:    .DB LQuote, "WRMH", 0, 0, "?", LTheta, "VQLG", 0, 0, ":ZUPKFC", 0, " YTOJEBX", 0, "XSNIDA"
+LwrAlphLUT:  .DB LQuote, "wrmh", 0, 0, "?", LTheta, "vqlg", 0, 0, ":zupkfc", 0, " ytojebx", 0, "xsnida"
+
+Keygroups:   .DB $FE, $FD, $FB, $F7, $EF, $DF, $BF, 0

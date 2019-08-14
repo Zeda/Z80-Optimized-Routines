@@ -1,0 +1,142 @@
+;created by arriopolis with an optimization by KermMartian
+
+Menu:
+;This routine will make a menu, almost the same as the TI-basic one.
+;The screen will be cleared after this routine has been completed.
+;INPUT: The text via the code stream.
+;For example:
+;    .DB "MenuTitle       ", 0   ;Menu Title, 16 bytes in length, followed by a 0.
+;    .DB 3                              ;Number of options (max. = 7)
+;    .DB "Option1       "         ;Option 1, 14 bytes in length
+;    .DB "Option2       "         ;Option 2, 14 bytes in length
+;    .DB "Option3       "         ;Option 3, 14 bytes in length
+;OUTPUT:
+;    A: Option selected.
+;DESTROYS:
+;    Registers HL, DE, BC, AF, IX
+;    Flag: 0, (IY + Asm_flag1)
+    CALL Menu2                          ;Start the procedure
+    BIT 0, (IY + Asm_flag1)             ;If the bit is 0...
+    JR Z, OutputInC                     ;...then the output is in C
+    LD A, L            ;If not, load L into A
+    RET                                 ;Return
+OutputInC:
+    LD A, C                             ;Load C into A
+    RET                                 ;Return
+
+Menu2:
+    RES AppAutoScroll, (IY + AppFlags)  ;Keep the screen from rolling
+    b_call(_ClrLCDFull)                 ;Clear the screen
+    CALL TextInverseOn                  ;Set textinverse
+    ld hl, $0000                        ;Set cursor to (0,0)
+    ld (CurRow), hl
+    POP IX
+    POP HL                              ;Pop the address of the menutitle
+    LD D, H                             ;Store HL into DE
+    LD E, L
+    b_call(_PutS)                       ;Display the menutitle
+    CALL TextInverseOff                 ;Reset textinverse
+    ld hl,17
+    add hl,de
+    ex de,hl
+
+;Drawing the text
+    LD HL, $0201                        ;Load the cursor for the first string
+    LD (CurRow), HL
+    LD HL, CurCol                       ;Load the address of the cursor in HL
+    EX DE, HL                           ;Load the address of the number of rows to be drawn into HL
+    LD C, (HL)                          ;Load that number into C
+    PUSH BC                             ;Save C, because we are going to need it once more
+    INC HL                              ;Load the address of the first character of the first option in the menu
+    LD B, 14                            ;14 characters per string
+DisplayText:
+    LD A, (HL)                          ;Load the first character of the string into A
+    b_call(_PutC)                       ;Display the character, and advance the cursor
+    INC HL                              ;Set the address for the next character
+    DJNZ DisplayText                    ;Repeat this 14 times
+    EX DE, HL                           ;HL = Address of cursor, DE = Address of MenuText
+    LD (HL), 2                          ;Set (CurCol) to 2
+    EX DE, HL                           ;HL = Address of MenuText, DE = Address of cursor
+    LD B, 14                            ;14 characters again.
+    DEC C                               ;Decline number of times to repeat this
+    JR NZ, DisplayText                  ;If the number of times to repeat this <> 0, repeat this
+    POP BC                              ;Restore C, the number of options in the menu
+    PUSH HL                             ;Store the address to jump to after the procedure has ended
+    PUSH IX
+    ld b, c                             ;Store the number of options into B
+    ld h, b                             ;Save this number in h
+
+;Drawing the numbers next
+DrawNumbersComplete:
+    ld c, 1                             ;C keeps track of the current option selected
+DrawNumbersSet:
+    ld b, h                             ;Restore the number of numbers to be drawn into b.
+    xor a                               ;Reset CurCol to 0
+    ld (CurCol), A
+    ld l, $31                           ;load the hexvalue of "1" in L
+    ld de, CurRow                       ;load the address of CurRow in DE
+    ld a, 1                             ;A keeps track of the current row to be drawn
+DrawNumbers:
+    ld (DE), a                          ;CorRow now equals the number to be drawn
+    cp c                                ;If C = A
+    CALL Z, TextInverseOn               ;Textinverse = on
+    cp c                                ;If C <> A
+    CALL NZ, TextInverseOff             ;Textinverse = off
+    PUSH AF                             ;Save A because it is needed to display characters
+    ld a, l                             ;load the ASCII code of the number into A
+    b_call(_PutC)                       ;Display the character, and advance the cursor
+    ld a, Lcolon                        ;load the ASCII code of the ":" into A
+    b_call(_PutMap)                     ;Display the character, not advance the cursor
+    xor a                               ;Reset CurCol
+    ld (CurCol), a
+    inc hl                              ;Incline the number, because the numbers are placed right behind each other in ROM
+    POP AF                              ;Recover A
+    inc A                               ;Incline the row
+    DJNZ DrawNumbers                    ;Repeat this, the number of times of the number of options
+
+UserInput:
+    RES 0, (IY + Asm_Flag1)             ;Resets the flag
+    PUSH HL                             ;Save HL temporarely, because b_call(_getKey) messes it up
+    b_call(_getKey)                     ;Gets the key pressed, and saves it in A
+    POP HL                              ;Restore HL
+    CP kDown                            ;If down is pressed...
+    JR Z, InclineMenu                   ;Incline C
+    CP kUP                              ;If up is pressed...
+    JR Z, DeclineMenu                   ;Decline C
+    CP kEnter                           ;If enter is pressed...
+    RET Z                               ;Exit the procedure
+    SET 0, (IY + Asm_Flag1)             ;Sets the flag
+    LD L, 1                             ;L will save the option selected, if it was accessed by a number key
+    LD B, H                             ;Load the number of options into B
+    LD E, 7                             ;7 keys to check max
+    LD D, k1                            ;Load the address of the first key into D
+CheckForNumber:
+    CP D                                ;Substract D (only modifying flags)
+    RET Z                               ;Exit the procedure if the right key is met
+    DEC B                               ;Decline B
+    JR Z, UserInput                     ;If 0, go to the userinput
+    INC L                               ;Incline L
+    INC D                               ;Incline D
+    DEC E                               ;Decline E
+    JR NZ, CheckForNumber               ;Repeat this until either B or E met 0
+    JR UserInput                        ;Go to userinput
+
+InclineMenu:
+    INC C
+    LD A, C
+    DEC A
+    CP H
+    JP Z, DrawNumbersComplete
+    JP DrawNumbersSet
+DeclineMenu:
+    DEC C
+    JP NZ, DrawNumbersSet
+    LD C, H
+    JP DrawNumbersSet
+
+TextInverseOn:
+    SET TextInverse, (IY + TextFlags)
+    RET
+TextInverseOff:
+    RES TextInverse, (IY + TextFlags)
+    RET

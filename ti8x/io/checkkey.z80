@@ -1,0 +1,23 @@
+;written by Anakclusmos
+CheckKey:
+;Input:  a=getcsc keycode
+;Output: z flag set if pressed, nz if not
+  ld b,$FE
+  ld c,$01
+ck_loop:
+  dec a
+  or a
+  jr z,ck_getkey
+  rlc c
+  jr nc,ck_loop
+  rlc b
+  jr ck_loop
+ck_getkey:
+  ld a,$FF
+  out (1),a
+  ld a,b
+  out (1),a
+  nop \ nop
+  in a,(1)
+  and c
+  ret

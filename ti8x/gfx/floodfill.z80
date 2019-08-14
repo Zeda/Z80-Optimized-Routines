@@ -1,0 +1,82 @@
+;Written by Will_W on Cemetech
+;only works on small areas, large areas can easily overflow the stack and frick stuff up.
+
+;l = y
+;b = x
+FloodFill:
+   xor a
+   ld d,0
+   push de;
+   push af
+   ld a,b
+   ld e,l
+   ld h,00h
+   ld d,h
+   add hl,de
+   add hl,de
+   add hl,hl
+   add hl,hl;y offset * 12
+   ld e,a
+   and 07h; bit offset within byte
+   ld c,a
+   srl e
+   srl e
+   srl e
+   add hl,de; byte number in which to start
+   ld de,gbuf
+   add hl,de; address of byte
+   ld b,a
+   inc b
+   xor a
+   scf
+Loop1:;bit offset to mask
+   rla
+   djnz Loop1
+   push hl;byte
+   push af;mask
+MainLoop:
+   pop bc
+   pop hl
+   ld a,b
+   or h;a = 0 and h = 0
+   ret z
+   ld a,b
+   ;expand left
+   rlca
+   jp nc,Skip1;jump if bit to left is in same byte
+   dec hl
+   bit 0,(hl)
+   jp nz,Skip2;jump if not expanding there
+   set 0,(hl)
+   push hl
+   push af;mask
+Skip2:;inc hl and keep on going
+   inc hl
+   jp Skip3
+Skip1:;expand left if within same byte
+   and (hl)
+   jp nz,Skip3;jump if not expanding
+   ld a,b
+   rlca
+   push hl
+   push af
+   or (hl)
+   ld (hl),a
+Skip3:;expand right
+   ld a,b
+   rrca
+   jp nc,Skip4;jump if bit to right is in same byte
+   inc hl
+   bit 7,(hl)
+   jp nz,Skip5;jump if not expanding
+   set 7,(hl)
+   push hl
+   push af
+Skip5:;finish off expansion
+   inc hl
+   jp Skip6;done with right, now up
+Skip4:;expand right within same byte
+   and (hl)
+   jp nz,Skip6;expand up
+   ld a,b
+   rr

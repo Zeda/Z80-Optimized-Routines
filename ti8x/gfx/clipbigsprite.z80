@@ -1,0 +1,236 @@
+;--------------------------------
+;Clip Big Sprite
+;by James Montelongo
+;MAX SIZE: 64x64
+;ix - Sprite
+;b  - height
+;c  - width in bytes
+;d  - x
+;e  - y
+ClipBigSprite:
+; Early out, Check if its even remotely on screen
+   ld a,e
+   cp 64
+   ret p
+   add a,b
+   ret m
+   ret z
+   ld a,d
+   cp 96
+   ret p
+   ld a,c
+   add a,a
+   add a,a
+   add a,a
+   add a,d
+   ret m
+   ret z
+   ld a,e
+   or a
+   jp p,Check_clip_bottom
+   neg
+   push de
+   ld hl,0
+   ld d,l
+   ld e,a
+   bit 2,c
+   jr z,$+2+1
+   add hl,de
+   add hl,hl
+   bit 1,c
+   jr z,$+2+1
+   add hl,de
+   add hl,hl
+   bit 0,c
+   jr z,$+2+1
+   add hl,de
+   pop de
+   ex de,hl
+   add ix,de      ;Here you can save the top offset
+   ex de,hl
+   ld e,0
+   neg
+   add a,b
+   ld b,a
+Check_clip_bottom:
+   ld a,e
+   add a,b
+   sub 64
+   jp m,Check_clip_Left
+   neg
+   add a,b
+   ld b,a
+Check_clip_Left: ; at this point you may want to save b
+   xor a
+   ld (bigskip),a
+   ld a,Clipleftsize
+   ld (Do_Clipleft),a
+   ld a,d
+   or a
+   jp p,Check_clip_right
+   cpl
+   and $F8
+   rra
+   rra
+   rra
+   ex de,hl      ;save the clipped left offset
+   ld e,a
+   ld d,0
+   add ix,de
+   ld (bigskip),a
+   ex de,hl
+   inc a
+   neg
+   add a,c
+   ld c,a
+   xor a
+   ld (Do_Clipleft),a
+   ld a,d
+   and $07
+   ld d,a
+Check_clip_right:
+   ld a,Cliprightsize
+   ld (Do_Clipright),a
+   ld a,c
+   add a,a
+   add a,a
+   add a,a
+   add a,d
+   sub 96
+   jp m,Check_clip_middle
+   and $F8
+   rra
+   rra
+   rra
+   ld l,a
+   ld a,(bigskip)
+   add a,l
+   inc a
+   ld (bigskip),a
+   neg
+   add a,c
+   ld c,a
+   xor a
+   ld (Do_Clipright),a
+Check_clip_middle: ; This is where C should be saved.
+   xor a
+   ld (Do_ClipMiddle),a
+   ld a,c
+   or a
+   jp nz,dontskipmiddle
+   ld a,ClipMiddlesize
+   ld (Do_ClipMiddle),a
+dontskipmiddle:
+   ld l,e
+   ld a,d
+   ld h,0
+   ld d,h
+   add hl,hl
+   add hl,de
+   add hl,hl
+   add hl,hl
+   ld e,a
+   and $07
+   xor 7
+   ld (BigRot1),a
+   ld (BigRot2),a
+   ld (BigRot3),a
+   add a,a
+   ld (clipbigrot1),a
+   ld a,$ff
+clipbigrot1 = $+1
+   jr $
+   srl a
+   srl a
+   srl a
+   srl a
+   srl a
+   srl a
+   srl a
+   srl e
+   srl e
+   srl e
+   add hl,de
+   ld de,gbuf
+   add hl,de ; This is where gbuf offset should be saved.
+   ld d,a
+   cpl
+   ld e,a ;masks should be saved to
+BigSpriteRow:
+   push bc
+   push hl
+   ld b,c
+Do_Clipleft = $+1
+   jr Clipleft
+   ld a,(ix)
+   inc ix
+BigRot1 = $+1
+   jr $
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+BigMask0:
+   and e
+   or (hl)
+   ld (hl),a
+Clipleft:
+Clipleftsize = Clipleft-(Do_Clipleft+1)
+Do_ClipMiddle = $+1
+   jr $+2
+BigSpriteloop:
+   ld a,(ix)
+   inc ix
+BigRot2 = $+1
+   jr $
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   ld c,a
+BigMask1:
+   and d
+   or (hl)
+   ld (hl),a
+   inc hl
+   ld a,c
+BigMask2:
+   and e
+   or (hl)
+   ld (hl),a
+   djnz BigSpriteloop
+ClipMiddle:
+ClipMiddlesize = ClipMiddle-(Do_ClipMiddle+1)
+Do_ClipRight = $+1
+   jr ClipRight
+   ld a,(ix)
+BigRot3 = $+1
+   jr $
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+   rrca
+BigMask3:
+   and d
+   or (hl)
+   ld (hl),a
+ClipRight:
+Cliprightsize = ClipRight-(Do_ClipRight+1)
+   pop hl
+   ld bc,12 ;width of the screen
+   add hl,bc
+bigskip = $+1
+   ld bc,0
+   add ix,bc
+   pop bc
+   djnz BigSpriteRow
+   ret
