@@ -1,0 +1,15 @@
+I learned these from calc84maniac:
+
+Compare HL to DE:
+    or a
+    sbc hl,de
+    add hl,de
+
+
+Compare HL to BC:
+    or a
+    sbc hl,bc
+    add hl,bc
+
+
+These have similar flags to that of the `cp` instruction. At the very least, you get the zero and carry flag identical.
