@@ -1,0 +1,47 @@
+;Works like the TI-OS setXXOP1 and setXXOP2 routine, but more flexible (and faster).
+;This can write 3-digit numbers :)
+
+setXXXOP1:
+    ld hl,OP1
+setXXX:
+;Inputs: A is the unsigned int
+;        HL is where to write the TI float
+;Destroys:All
+;423cc+13a+63b (or 233cc if A=0)
+;average: a=99/255, b=29/255
+;435.2117647cc average
+;64 bytes
+    ld bc,$0700
+    ld (hl),c
+    inc hl
+    ld (hl),83h
+    ld d,h
+    ld e,l
+    inc hl \ ld (hl),c \ djnz $-2
+    or a \ ret z    ;If A is zero, exit early. +227cc
+    ld l,a          ;\
+    ld h,c          ; |
+    add hl,hl       ; |Start converting A to BCD
+    add hl,hl       ; |
+    add hl,hl       ; |
+    add hl,hl       ; |
+    ld a,h \ daa  \ rl l    ; |Finish converting A to BCD
+    adc a,a \ daa \ rl l    ; |Number is in LA
+    adc a,a \ daa \ rl l    ; |
+    adc a,a \ daa \ rl l    ; |
+    adc a,a \ daa \ rl l    ;/ +132cc
+    ex de,hl
+    jr nz,$+6 \ ld e,a \ xor a \ ld (hl),81h    ;+(21+4/85)cc
+    inc hl
+    ld (hl),e
+    inc hl
+    ld (hl),a
+    ld a,e
+    and $F0
+    ret nz      ;+48cc
+    rld         ;\ Rotate up 1 digit
+    dec hl      ; |
+    rld         ; |
+    dec hl      ; |
+    dec (hl)    ; |Decrement exponent
+    ret         ; /+63(29/255)cc

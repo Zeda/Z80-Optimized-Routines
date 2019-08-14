@@ -1,0 +1,241 @@
+;Note: If `SMC` is not defined, you must define drawlineRAMCodeLoc and you must have moved
+;the code between drawlineRAMCode and drawlineRAMCode_end to that location (this is located at
+;the end of this file). For example:
+;
+;  If this code is running from RAM already (i.e. a program):
+;       #define SMC
+;
+;  If this code is running from an app:
+;       drawlineRAMCodeLoc = $8000    ;or wherever you want it for your app)
+;           ld hl,drawlineRAMCode
+;           ld de,drawlineRAMCodeLoc
+;           ld bc,drawlineRAMCode_end-drawlineRAMCode
+;           ldir
+
+
+
+DrawLine_pattern:
+;     H is X1
+;     L is Y1
+;     D is width
+;     E is height
+;     A is the method
+;        0 = Pxl-Off
+;        1 = Pxl-On
+;        2 = PxlInvert
+;        3 =
+;       +4 = Draw with Merth pattern
+;       +8 = Draw with Ray pattern
+;     IX points to the draw pattern
+;        *Patterns are read backwards. This can be easily adjusted.
+;        *Patterns are terminated by a -1
+;        *Patterns are the number of pixels to draw, followed by the number of pixels to ignore for the Merth Pattern
+;           For the Ray pattern, it is the number of rows to draw followed by the number to ignore.
+;     gbuf is defined (ex. gbuf=plotSScreen)
+;Destroys:
+;     All registers, including shadow registers (excluding IX)
+;     bits 5, 6, and 7 at iy+asm_Flag1
+MerthPattern = 5
+RayPattern = 6
+     di
+     res MerthPattern,(iy+asm_Flag1)
+     res RayPattern,(iy+asm_Flag1)
+     bit 2,a
+     jr z,$+6
+       set MerthPattern,(iy+asm_Flag1)
+     bit 3,a
+     jr z,$+6
+       set RayPattern,(iy+asm_Flag1)
+     and $F3                      ;3^5=243=$F3
+        .db 01h \ cpl \ and (hl)
+        dec a
+        jr nz,$+5
+        .db 01h \ or (hl) \ nop
+        dec a
+        jr nz,$+5
+        .db 01h \ xor (hl) \ nop
+        ld (PlotLinePix+1),bc
+ ld a,-1
+ ld (PatternIncVar2),a
+ res 7,(iy+asm_Flag1)
+ ld a,(ix)
+ bit RayPattern,(iy+asm_Flag1)
+ jr nz,$+3
+ inc a
+ ld (PatternIncVar),a
+ or a
+ call z,PatternNext
+
+     ld c,0
+     ld a,d
+     bit 7,a
+     jr z,$+7
+       neg
+       set 6,c
+       ld d,a
+     ld a,e
+     bit 7,a
+     jr z,$+7
+       neg
+       set 7,c
+       ld e,a
+     ld b,a
+     ex af,af'
+     ld a,c
+       exx
+       rla
+       ld de,12
+       ld bc,1
+       jr nc,$+5
+         ld de,-12
+       rla
+       jr nc,$+4
+         dec bc \ dec bc
+       exx
+     ld a,h
+     push hl
+     push bc
+     ld h,0
+     ld b,h
+     ld c,l
+     add hl,hl
+     add hl,bc
+     add hl,hl
+     add hl,hl
+     ld c,a
+     sra c
+     sra c
+     sra c
+     jp p,$+4
+       dec b
+     add hl,bc
+     ld bc,gbuf
+     add hl,bc
+     and 7
+     ld b,a
+     ld a,80h
+     jr z,$+5
+       rrca
+       djnz $-1
+     push hl
+     exx
+     pop hl
+     exx
+     ex af,af'
+     pop bc
+     pop hl
+
+     sla e
+     jr nz,$+12
+       ld b,d
+         call DrawLinePixel
+         call ChangeX
+         djnz $-6
+         ret
+     sla d
+;a is the width/2
+;d is width
+;e is height
+;b is the height
+;c is the method
+;h is X
+;l is Y
+DrawLineLoop:
+     call DrawLinePixel
+     sub d
+     jr c,subline
+     call ChangeY
+     djnz DrawLineLoop
+     ret
+subline:
+     call ChangeX
+     add a,e
+     jr c,$+8
+     call DrawLinePixel
+     jp subline
+     call ChangeY
+     djnz DrawLineLoop
+     ret
+ChangeY:
+   bit RayPattern,(iy+asm_Flag1)
+   call nz,PatternInc
+   exx
+   add hl,de
+   exx
+   inc l
+   bit 7,c
+   jr z,$+4
+   dec l \ dec l
+   ret
+ChangeX:
+   ex af,af'
+   rrca
+   inc h
+   bit 6,c
+   jr z,$+6
+   dec h \ dec h \ rlca \ rlca
+   jr nc,$+5
+     exx
+     add hl,bc
+     exx
+   ex af,af'
+   ret
+DrawLinePixel:
+     bit MerthPattern,(iy+asm_Flag1)
+     call nz,PatternInc
+     bit 7,(iy+asm_Flag1)
+     ret nz
+     push af
+     ld a,l
+     cp 64
+     jr nc,ExitDrawPixel
+     ld a,h
+     cp 96
+     jr nc,ExitDrawPixel
+     ex af,af'
+     exx
+     call PlotLinePix
+     exx
+     ex af,af'
+ExitDrawPixel:
+     pop af
+     ret
+
+drawlineRAMCode:
+#ifdef SMC
+drawlineRAMCodeLoc:
+#endif
+PlotLinePix     equ $-drawlineRAMCode+drawlineRAMCodeLoc
+     push af
+     nop
+     or (hl)
+     ld (hl),a
+     pop af
+     ret
+PatternInc      equ $-drawlineRAMCode+drawlineRAMCodeLoc
+     push hl
+     push af
+PatternIncVar   equ 1+$-drawlineRAMCode+drawlineRAMCodeLoc
+     ld a,0
+     dec a
+     jr nz,EndPatternInc
+PatternNext:
+       ld a,80h
+       xor (iy+asm_Flag1)
+       ld (iy+asm_Flag1),a
+       ld hl,PatternIncVar2
+PatternIncVar2   equ 2+$-drawlineRAMCode+drawlineRAMCodeLoc
+       ld a,(ix-1)
+       inc a
+       jr nz,$+6
+         ld (hl),0
+         jr $-8
+       dec (hl)
+       dec a
+       jr z,PatternNext
+EndPatternInc:
+     ld (PatternIncVar),a
+     pop af
+     pop hl
+     ret
+drawlineRAMCode_end:

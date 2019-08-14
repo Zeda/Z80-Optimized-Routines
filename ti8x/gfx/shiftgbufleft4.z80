@@ -1,0 +1,20 @@
+shiftgraphright4:
+;   Shifts the contents of plotSScreen right 4 pixels
+;29846cc
+  ld hl,plotSScreen+767
+
+shiftgbufright4:
+;   HL points to the last byte of a horizontally aligned gbuf
+;   Shifts the contents left 4 pixels, shifting in zeros.
+;29836cc
+;14 bytes
+  ld c,64
+shiftgbufright4_loop:
+  xor a
+  ld b,12
+
+  rld \ dec hl \ djnz $-3
+
+  dec c
+  jr nz,shiftgbufright4_loop
+  ret

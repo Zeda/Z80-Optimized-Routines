@@ -1,0 +1,45 @@
+setXXX_signed:
+;Inputs: A is the signed int
+;        HL is where to write the TI float
+    ld c,0
+    ld (hl),c
+    add a,a
+    jr c,$+6
+    neg
+    ld (hl),80h
+    inc hl
+    ld (hl),81h
+    ld d,h
+    ld e,l
+    inc hl \ ld (hl),c \ djnz $-2
+    or a \ ret z
+    ld l,a          ;\
+    ld h,c          ; |
+    add hl,hl       ; |Start converting A to BCD
+    add hl,hl       ; |
+    add hl,hl       ; |
+    add hl,hl       ; |
+    ld a,h \ daa  \ rl l    ; |Finish converting A to BCD
+    adc a,a \ daa \ rl l    ; |Number is in cA
+    adc a,a \ daa \ rl l    ; |(c is carry)
+    adc a,a \ daa           ;/
+    ex de,hl
+    jr nc,$+15
+    ld (hl),82h
+    inc hl
+    inc hl
+    ld (hl),a
+    xor a
+    rld
+    or $10
+    dec hl
+    ld (hl),a
+    ret
+    inc hl
+    ld (hl),a
+    and $F0
+    ret nz
+    rld         ;\ Rotate up 1 digit
+    dec hl      ; |
+    ld (hl),80h ; |
+    ret         ; /

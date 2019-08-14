@@ -1,0 +1,46 @@
+;Works like the TI-OS setXXOP1 and setXXOP2 routine.
+setXXOP2:
+    ld hl,OP2
+    jr setXX
+setXXOP1:
+    ld hl,OP1
+setXX:
+;Inputs: A is the unsigned int
+;        HL is where to write the TI float
+;Destroys:All
+;291cc+38b (or 144cc if A=0)
+;average: b=29/255
+;295.3215686cc
+;59 bytes
+    ld c,0
+    ld (hl),c \ inc hl
+    ld (hl),81h
+    inc hl \ ld (hl),c
+    ld d,h \ ld e,l
+    inc hl \ ld (hl),c
+    inc hl \ ld (hl),c
+    inc hl \ ld (hl),c
+    inc hl \ ld (hl),c
+    inc hl \ ld (hl),c
+    inc hl \ ld (hl),c
+
+    or a \ ret z    ;If A is zero, exit early. +138cc
+    ld l,a          ;\
+    ld h,c          ; |
+    add hl,hl       ; |Start converting A to BCD
+    add hl,hl       ; |
+    add hl,hl       ; |
+    add hl,hl       ; |
+    ld a,h \ daa  \ rl l    ; |Finish converting A to BCD
+    adc a,a \ daa \ rl l    ; |Number is in LA
+    adc a,a \ daa \ rl l    ; |
+    adc a,a \ daa \ rl l    ; |
+    adc a,a \ daa           ;/ +124cc
+    ex de,hl
+    ld (hl),a
+    and $F0
+    ret nz      ;+29cc
+    rld         ;\ Rotate up 1 digit
+    dec hl      ; |
+    ld (hl),80h ; |
+    ret         ; /

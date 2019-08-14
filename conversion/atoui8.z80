@@ -1,0 +1,26 @@
+atoui8:
+strtob:
+;Input:
+;   HL is a string, terminated by a non-numeric ASCII char
+;Output:
+;   A has the 8-bit value
+strtob:
+    xor a
+    call loop
+    ld a,d
+    ret
+loop:
+    ld d,a
+    ld a,(hl)
+    inc hl
+    sub '9'+1
+    add 10
+    ret nc
+    ld e,a
+    ld a,d
+    add a,a     ;double our accumulator
+    add a,a     ;double again (now x4)
+    add a,d     ;add the original (now x5)
+    add a,a     ;double again (now x10)
+    add a,e     ;add in the incoming digit
+    jr loop

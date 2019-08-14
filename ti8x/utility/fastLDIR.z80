@@ -1,0 +1,53 @@
+;This is a general-purpose faster-than-LDIR code to replace LDIR in speed-
+;critical situations.
+fastLDIR:
+;copy BC bytes from HL to DE
+;Cost:
+;    27cc for having to call
+;    110cc for setting up the loop, worst case
+;    10cc * ceiling(BC/n)        ;n=2^k for some k, see the line below "ldirloop:"
+;    16cc * BC
+;costs roughly 152-BC*(5-10/n) more than a simple LDIR (worst case)
+;for n=4,  BC>=61 saves
+;for n=8,  BC>=41 saves
+;for n=16, BC>=35 saves   * default, see the "ldirloop" to change
+;for n=32, BC>=33 saves
+;for n=64, BC>=32 saves
+    push hl
+    push af
+    xor a
+    sub c
+    and 15               ;change to n-1
+    add a,a
+    ld hl,ldirloop
+    add a,l
+    ld l,a
+    jr nc,$+3  ;these aren't needed if the ldirloop doesn't cross a 256 byte boundary. Can save 12cc on the above timings and 3 bytes.
+    inc h      ;
+    pop af
+    ex (sp),hl
+    ret
+ldirloop:
+;n=16, (number of LDI instructions, use qty of 4,8,16,32,64)
+    ldi
+    ldi
+    ldi
+    ldi
+
+    ldi
+    ldi
+    ldi
+    ldi
+
+    ldi
+    ldi
+    ldi
+    ldi
+
+    ldi
+    ldi
+    ldi
+_ldirloop_end:
+    ldi
+    jp pe,ldirloop
+    ret

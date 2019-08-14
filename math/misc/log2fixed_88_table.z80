@@ -1,0 +1,156 @@
+lg_88:
+;Input: HL is a fixed point number
+;Output: lg(H.L)->H.L
+;Speed: Avg: 340
+   ld de,lgLUT
+   ld b,0
+   ld a,h
+   or a
+   ret m
+   ld a,l
+   jr z,$+8
+   inc b \ srl h \ rra \ jr nz,$-4
+   or a \ jr nz,$+6
+   ld hl,8000h \ ret
+   rra \ inc b \ jr nc,$-2
+;A is the element to look up in the LUT
+   ld l,a
+    ld c,h
+    dec b
+   add hl,hl
+   add hl,de
+   ld e,(hl)
+   inc hl
+   ld d,(hl)
+    ex de,hl
+   add hl,bc
+   ret
+lglut:
+.dw $F800
+.dw $F996
+.dw $FA52
+.dw $FACF
+.dw $FB2C
+.dw $FB76
+.dw $FBB3
+.dw $FBE8
+.dw $FC16
+.dw $FC3F
+.dw $FC64
+.dw $FC86
+.dw $FCA5
+.dw $FCC1
+.dw $FCDC
+.dw $FCF4
+.dw $FD0B
+.dw $FD21
+.dw $FD36
+.dw $FD49
+.dw $FD5C
+.dw $FD6D
+.dw $FD7E
+.dw $FD8E
+.dw $FD9D
+.dw $FDAC
+.dw $FDBA
+.dw $FDC8
+.dw $FDD5
+.dw $FDE2
+.dw $FDEE
+.dw $FDFA
+.dw $FE06
+.dw $FE11
+.dw $FE1C
+.dw $FE26
+.dw $FE31
+.dw $FE3B
+.dw $FE44
+.dw $FE4E
+.dw $FE57
+.dw $FE60
+.dw $FE69
+.dw $FE71
+.dw $FE7A
+.dw $FE82
+.dw $FE8A
+.dw $FE92
+.dw $FE9A
+.dw $FEA1
+.dw $FEA9
+.dw $FEB0
+.dw $FEB7
+.dw $FEBE
+.dw $FEC5
+.dw $FECB
+.dw $FED2
+.dw $FED8
+.dw $FEDF
+.dw $FEE5
+.dw $FEEB
+.dw $FEF1
+.dw $FEF7
+.dw $FEFD
+.dw $FF03
+.dw $FF09
+.dw $FF0E
+.dw $FF14
+.dw $FF19
+.dw $FF1E
+.dw $FF24
+.dw $FF29
+.dw $FF2E
+.dw $FF33
+.dw $FF38
+.dw $FF3D
+.dw $FF42
+.dw $FF47
+.dw $FF4B
+.dw $FF50
+.dw $FF55
+.dw $FF59
+.dw $FF5E
+.dw $FF62
+.dw $FF67
+.dw $FF6B
+.dw $FF6F
+.dw $FF74
+.dw $FF78
+.dw $FF7C
+.dw $FF80
+.dw $FF84
+.dw $FF88
+.dw $FF8C
+.dw $FF90
+.dw $FF94
+.dw $FF98
+.dw $FF9B
+.dw $FF9F
+.dw $FFA3
+.dw $FFA7
+.dw $FFAA
+.dw $FFAE
+.dw $FFB2
+.dw $FFB5
+.dw $FFB9
+.dw $FFBC
+.dw $FFC0
+.dw $FFC3
+.dw $FFC6
+.dw $FFCA
+.dw $FFCD
+.dw $FFD0
+.dw $FFD4
+.dw $FFD7
+.dw $FFDA
+.dw $FFDD
+.dw $FFE0
+.dw $FFE4
+.dw $FFE7
+.dw $FFEA
+.dw $FFED
+.dw $FFF0
+.dw $FFF3
+.dw $FFF6
+.dw $FFF9
+.dw $FFFC
+.dw $FFFF

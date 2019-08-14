@@ -1,0 +1,44 @@
+sine_88:
+;Inputs: de
+    push de
+    sra d \ rr e
+    ld h,d
+    ld l,e
+    call mulfixed_88
+    push hl     ;x^2/4
+    sra h \ rr l
+    ld d,h
+    ld e,l
+    call mulfixed_88
+    sra h \ rr l
+    inc h
+    ex (sp),hl    ;x^4/128+1 is on stack, HL=x^2/4
+    xor a
+    ld d,a
+    ld b,h
+    ld c,l
+    add hl,hl \ rla
+    add hl,hl \ rla
+    add hl,bc \ adc a,d
+    ld b,h
+    ld c,l
+    add hl,hl \ rla
+    add hl,hl \ rla
+    add hl,hl \ rla
+    add hl,hl \ rla
+    add hl,bc \ adc a,d
+    ld e,l
+    ld l,h
+    ld h,a
+    rl e
+    adc hl,hl
+    rl e
+    jr nc,$+3
+    inc hl
+
+    pop de
+    ex hl,de
+    or a
+    sbc hl,de
+    pop de
+    call mulfixed_88
