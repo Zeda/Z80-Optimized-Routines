@@ -38,7 +38,7 @@ _:
   ld a,d
   or a
   jr z,+_
-  ld hl,$FFFF
+  ld hl,$7FFF
 _:
 
 ; Now we need to restore the sign
