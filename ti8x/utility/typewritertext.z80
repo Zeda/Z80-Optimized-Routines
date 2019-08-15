@@ -1,0 +1,19 @@
+;WikiGuru, optimized by DarkerLine
+;input: hl points to string (optional argument: b to set type speed)
+;output: string displayed at set location (must set penrow and pencol before calling)
+;destroyed: all but c
+
+type:
+  ld a,(hl)
+  or a
+  ret z
+  inc hl
+  ld b,30
+  ei
+pause:
+  halt
+  djnz pause
+  di
+  bcall(_VPutMap)
+  jr type
+  ret

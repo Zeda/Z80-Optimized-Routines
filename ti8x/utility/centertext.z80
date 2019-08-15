@@ -1,0 +1,17 @@
+;created by WikiGuru
+;input:hl points to string
+;output: string displayed centered on screen
+;destroyed: all registers
+;other remarks: (penrow) must be set before calling this sub-routine
+;               first byte of string must be the length of the string
+
+centertxt:
+ bcall(_SStringLength)
+ ld a,96        ;width of screen
+ sub b          ;subtract width of string
+ rra             ;divide by 2 to be centered
+ ld (pencol),a
+ ld b,(hl)
+ inc hl
+ bcall(_VPutSN)
+ ret

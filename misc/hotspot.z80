@@ -1,0 +1,20 @@
+;DarkerLine
+;----------Hot spot detection-----------
+;inputs: b,c (first x and y cor)
+;        d,e (last x and y cor)
+;        h,l (current x,y)
+;output: "c" flag [either true (set) or false (reset)]
+
+hdetect:
+  ld a,h
+  cp b
+  ccf
+  ret nc
+  cp d
+  ret nc
+  ld a,l
+  cp c
+  ccf
+  ret nc
+  cp e
+  ret

@@ -1,0 +1,30 @@
+;H=Y
+;A=X
+
+GetPixelloc:
+   LD    H, 0
+   LD    D, H
+   LD    E, L
+   ADD   HL, HL
+   ADD   HL, DE
+   ADD   HL, HL
+   ADD   HL, HL
+
+   LD    E, A
+   SRL   E
+   SRL   E
+   SRL   E
+   ADD   HL, DE
+
+   LD    DE, PlotSScreen
+   ADD   HL, DE
+
+   AND   7
+
+   LD    A, $80
+   RET   Z
+   LD    B, A
+Loop:
+   RRCA
+   DJNZ   Loop
+   RET

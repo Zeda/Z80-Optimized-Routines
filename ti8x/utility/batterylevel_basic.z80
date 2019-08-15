@@ -1,0 +1,11 @@
+;Name: BatteryStatus
+;Description: Returns if the batteries are good, or low and need changing.
+;Inputs: None
+;Outputs: Non-Zero = Good Batteries
+          Zero = Batteries Low
+;Destroys: A
+
+GetBatteryStatus:
+    in a, (2)
+    and 01h
+    ret

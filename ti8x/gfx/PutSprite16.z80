@@ -1,0 +1,71 @@
+;Created by Fallen Ghost
+;PutSprite16
+;
+;PutSprite8 I modified to PutSprite16. From what I've seen on Ticalc, it's the fastest.
+;
+;Input:
+;L=Y coordinates
+;A=X coordinates
+;b=height of sprite
+;ix=sprite location. IX+1 being the other 8 bits
+;
+;Output:
+;IX=data after the sprite's data
+;
+;Destroyed:
+;-AF, BC, DE, HL
+
+
+putSprite16:
+;L=Y coordinates
+;A=X coordinates
+;b=height of sprite
+;ix=sprite location. IX+1 being the other 8 bits
+   ld   e,l
+   ld   h,$00
+   ld   d,h
+   add   hl,de
+   add   hl,de
+   add   hl,hl
+   add   hl,hl
+   ld   e,a
+   and   $07
+   ld   c,a
+   srl   e
+   srl   e
+   srl   e
+   add   hl,de
+   ld   de,gbuf
+   add   hl,de
+putSprite16Loop1:
+        ld a,(ix+0)
+   ld   d,(ix+1)
+   ld   e,$00
+   dec c
+   inc c
+   jr   z,putSprite16Skip1
+        push bc
+putSprite16Loop2:
+   srl   a
+        rr d
+   rr   e
+   dec   c
+   jr   nz,putSprite16Loop2
+        pop bc
+putSprite16Skip1:
+        xor (hl)
+        ld (hl),a
+        inc hl
+   ld   a,(hl)
+   xor   d
+   ld   (hl),a
+   inc   hl
+   ld   a,(hl)
+   xor   e
+   ld   (hl),a
+   ld   de,10
+   add   hl,de
+   inc   ix
+        inc ix
+   djnz   putSprite16Loop1
+   ret

@@ -1,0 +1,36 @@
+PutSpriteXxY:
+;Inputs:
+;     a is the height
+;     b
+;     de points to the sprite data
+;     hl points to the output location on plotSScreen
+;Outputs:
+;     a is 0
+;     b is unchanged
+;     c is 12-b
+;     hl is a*12 larger (next sprite down?)
+;     de points to data after sprite
+;**As a note, the tenth byte or PutSpriteXxY+9 can be changed to some form of
+;logic since my calls are usually in RAM, I usually give the option of sprite
+;logic, so I change this byte instead of making the call 4 different times.
+  ld (hl),a        ;77
+  ld a,12          ;3E0C
+  sub b            ;90
+  ld c,a           ;4F
+  ld a,(hl)        ;7E
+Loop1:
+   push bc          ;C5
+   push af          ;F5
+Loop2:
+    ld a,(de)        ;1A
+    nop              ;00    This byte gets changed to logic... read the note
+    ld (hl),a        ;77
+    inc de           ;13
+    inc hl           ;23
+    djnz -7          ;10F9
+   add hl,bc        ;09
+   pop af           ;F1
+   pop bc           ;C1
+   dec a            ;3D
+   jr nz,-15        ;20F1
+   ret              ;C9
