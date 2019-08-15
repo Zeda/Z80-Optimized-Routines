@@ -1,38 +1,39 @@
 HL_Div_3:
-;HL/3 --> DE
-;232cc to 243cc
-  xor a
-  ld b,a
-  ld d,h
-  ld e,l
-  add hl,hl \ rla
-  add hl,hl \ rla
-  add hl,de \ adc a,b
-  add hl,hl \ rla
-  add hl,hl \ rla
-  add hl,de \ adc a,b
-  add hl,hl \ rla
-  add hl,hl \ rla
-  add hl,de \ adc a,b
-;AHL+(AHL+(DE>>1))/256
-  srl d \ rr e
-;AHL+(AHL+DE)/256
-;AH.L+A.HL+.DE
+;Input: HL
+;Output: HL is the input divided by 3
+;Destroys: B,C,E,A
+;217cc
+
+;increment HL, putting overflow in A
+  ld bc,1
+  ld a,b
+  add hl,bc
+  adc a,b
+
+;We want a difference of a factor of 2 shifts
   ld b,h
   ld c,l
-;AB.C+A.HL+.DE
-  add hl,de
-;AB.C+A.HL+carry
-  ld d,a
-;DB.C+A.H+carry
-  adc a,b
   ld e,a
-  jr nc,$+3
-  inc d
-;DE.C+0.H+carry
-  ld a,h
-  add a,c
-  ex de,hl
-  ret nc
-  inc hl
+  add hl,hl \ rla
+  add hl,hl \ rla
+  add hl,bc \ adc a,e
+
+;We want a difference of a factor of 4 shifts
+  ld b,h
+  ld c,l
+  ld e,a
+  add hl,hl \ rla
+  add hl,hl \ rla
+  add hl,hl \ rla
+  add hl,hl \ rla
+  add hl,bc \ adc a,e
+
+  ld b,a
+  ld c,h
+  add hl,bc
+  adc a,0
+  ld l,h
+  ld h,a
+;now HL is our result
+
   ret
