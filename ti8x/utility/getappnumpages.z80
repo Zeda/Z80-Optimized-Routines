@@ -1,0 +1,23 @@
+;Routine by Runer112, based on a routine by Zeda
+;Neither routine properly parses the app header, so technically it is
+;feasible that this won't work, but an app would almost have to be
+;inentionally designed for the specific purpose of breaking this code.
+
+getappnumpages:
+;Inputs:
+;     The app base page is loaded in MemBank1
+;Outputs:
+;     A, (HL) is the number of app pages
+
+     ld hl,4000h
+     ld a,81h
+     ld c,a
+FNPLoop:
+     dec a
+     cpir
+     inc a
+     cp (hl)
+     jr nz,FNPLoop
+     inc l
+     ld a,(hl)
+     ret

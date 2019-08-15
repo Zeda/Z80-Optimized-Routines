@@ -1,0 +1,27 @@
+HL_Div_C_round:
+;Inputs:
+;     HL is the numerator
+;     C is the denominator
+;Outputs:
+;     A is twice the remainder of the unrounded value
+;     B is 0
+;     C is not changed
+;     DE is not changed
+;     HL is the rounded quotient
+;     c flag set means no rounding was performed
+;            reset means the value was rounded
+;
+       ld b,16
+       xor a
+         add hl,hl
+         rla
+         cp c
+         jr c,$+4
+           inc l
+           sub c
+         djnz $-7
+       add a,a
+       cp c
+       ret c
+       inc hl
+       ret

@@ -1,0 +1,26 @@
+;Reverses the bits in HL
+;author: calcmaniac84
+
+reverseHL:
+;28 bytes and 104 cycles
+  ld a,l
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rr h
+  rla
+  rrca
+  ld l,a
+  ret

@@ -1,0 +1,37 @@
+HL_mod_3:
+;Outputs:
+;     Preserves HL
+;     A is the remainder
+;     destroys DE,BC
+;     z flag if divisible by 3, else nz
+     ld bc,030Fh
+     ld a,h
+     add a,l
+     sbc a,0   ;conditional decrement
+;Now we need to add the upper and lower nibble in a
+     ld d,a
+     and c
+     ld e,a
+     ld a,d
+     rlca
+     rlca
+     rlca
+     rlca
+     and c
+
+     add a,e
+     sub c
+     jr nc,$+3
+     add a,c
+;add the lower half nibbles
+
+     ld d,a
+     sra d
+     sra d
+     and b
+     add a,d
+     sub b
+     ret nc
+     add a,b
+     ret
+;at most 132 cycles, at least 123

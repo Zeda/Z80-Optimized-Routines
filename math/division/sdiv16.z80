@@ -1,0 +1,38 @@
+;created by Quigibo
+
+sdiv16:
+ ld a,h
+ xor d
+ push af
+
+ bit 7,h
+ jr z,$+8
+ xor a
+ sub l
+ ld l,a
+ sbc a,a
+ sub h
+ ld h,a
+
+ bit 7,d
+ jr z,$+8
+ xor a
+ sub e
+ ld e,a
+ sbc a,a
+ sub d
+ ld d,a
+
+ call RegularDivision
+
+ pop af
+ add a,a
+ ret nc
+
+ xor a
+ sub l
+ ld l,a
+ sbc a,a
+ sub h
+ ld h,a
+ ret

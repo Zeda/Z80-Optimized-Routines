@@ -1,0 +1,46 @@
+;By Galandros
+scroll_up:
+ add a,a
+ add a,a
+ ld l,a
+ ld e,a
+ ld h,0
+ ld d,h
+ add hl,hl
+ add hl,de ; hl=a*12
+
+ push hl
+ ld de,768
+ ex de,hl
+; carry is never set here if input is correct
+; or a
+ sbc hl,de
+ ld b,h
+ ld c,l  ; bc=768-12*a
+ ex de,hl
+ ld de,plotsscreen
+ add hl,de
+ ldir
+;blank remaining area
+ ld h,d
+ ld l,e
+ inc de
+ ld (hl),$00
+ pop bc
+ dec bc  ; bc=12*a-1
+ ldir
+ ret
+
+;PSEUDO CODE
+; ld hl,plotsscreen+12*a
+; ld de,plotsscreen
+; ld bc,768-12*a
+; ldir
+; ld h,d
+; ld l,e
+; ld (hl),$00
+; inc de
+; ld bc,12*a
+; dec bc
+; ldir
+; ret

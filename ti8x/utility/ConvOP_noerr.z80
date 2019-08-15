@@ -1,0 +1,74 @@
+;Converts a TI float in the way ConvOP1 does it.
+;Offers a wider range, and reading floats from arbitrary locations, not just OP1.
+
+ConvOP1:
+;Output: HL is the 16-bit result.
+    ld de,OP1
+ConvFloat:
+;Input: DE points to the float.
+;Output: HL is the 16-bit result.
+;  Input is on:
+;  (0,1)         => 57cc                        Average=57
+;  0 or [1,10)   => 117cc or 126cc                     =121.5
+;  [10,100)      => 174cc or 175cc                     =174.5
+;  [100,1000)    => 276cc, 277cc, 285cc, or 286cc.     =281
+;  [1000,10000)  => 374cc to 376cc                     =375
+;  [10000,65536) => 481cc to483cc, or 490cc to 492cc  =486.5
+;Average case:  467.88153076171875cc
+
+    ld hl,0
+    ld a,(de)
+    or a
+    ret z
+    inc de
+    ld a,(de)
+    inc de
+    sub 80h
+    ret c
+    jr z,final
+    cp 5
+    jp c,enterloop
+    ret
+loop:
+    ld a,b
+    ld b,h
+    ld c,l
+    add hl,hl
+    add hl,bc
+    add hl,hl
+    add hl,hl
+    add hl,hl
+    add hl,bc
+    add hl,hl
+    add hl,hl
+enterloop:
+    ld b,a
+    ex de,hl
+    ld a,(hl) \ and $F0 \ rra \ ld c,a \ rra \ rra \ sub c \ add a,(hl)
+    inc hl
+    ex de,hl
+    add a,l
+    ld l,a
+    jr nc,$+3
+    inc h
+    dec b
+    ret z
+    djnz loop
+    ld b,h
+    ld c,l
+    add hl,hl
+    add hl,hl
+    add hl,bc
+    add hl,hl
+final:
+    ld a,(de)
+    rrca
+    rrca
+    rrca
+    rrca
+    and 15
+    add a,l
+    ld l,a
+    ret nc
+    inc h
+    ret

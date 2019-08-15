@@ -1,0 +1,44 @@
+;===============================================================
+sqrtE:
+;===============================================================
+;Input:
+;     E is the value to find the square root of
+;Outputs:
+;     A is E-D^2
+;     B is 0
+;     D is the result
+;     E is not changed
+;     HL is not changed
+;Destroys:
+;     C=2D+1 if D is even, 2D-1 if D is odd
+
+        xor a               ;1      4         4
+        ld d,a              ;1      4         4
+        ld c,a              ;1      4         4
+        ld b,4              ;2      7         7
+sqrtELoop:
+        rlc d               ;2      8        32
+        ld c,d              ;1      4        16
+        scf                 ;1      4        16
+        rl c                ;2      8        32
+
+        rlc e               ;2      8        32
+        rla                 ;1      4        16
+        rlc e               ;2      8        32
+        rla                 ;1      4        16
+
+        cp c                ;1      4        16
+        jr c,$+4            ;4    12|15      48+3x
+          inc d             ;--    --        --
+          sub c             ;--    --        --
+        djnz sqrtELoop      ;2    13|8       47
+        ret                 ;1     10        10
+;===============================================================
+;Size  : 25 bytes
+;Speed : 332+3x cycles
+;   x is the number of set bits in the result. This will not
+;   exceed 4, so the range for cycles is 332 to 344. To put this
+;   into perspective, under the slowest conditions (4 set bits
+;   in the result at 6MHz), this can execute over 18000 times
+;   in a second.
+;===============================================================

@@ -1,0 +1,48 @@
+;===============================================================
+nCrHL_DE:
+;===============================================================
+;Inputs:
+;     hl is "n"
+;     de is "r"
+;Outputs:
+;     interrupts off
+;     a is 0
+;     bc is an intermediate result
+;     de is "n"
+;     hl is the result
+;     a' is not changed
+;     bc' is "r"+1
+;     de' is the same as bc
+;     hl' is "r" or the compliment, whichever is smaller
+;===============================================================
+     or a                     ;reset carry flag
+     sbc hl,de
+     ret c                    ;r should not be bigger than n
+     sbc hl,de \ add hl,de
+     jr nc,$+3
+       ex de,hl
+                             ;hl is R
+     push de
+     ld bc,1                 ;A
+     exx
+     pop de                  ;N
+     ld bc,1                 ;C
+     ld h,b \ ld l,c         ;D
+nCrLoop:
+     push de
+     push hl
+     call DE_Times_BC
+     push hl \ exx \ pop de
+     push hl
+     call DE_Div_BC
+     pop de
+     push hl \ ex de,hl \ exx \ pop hl
+     ld b,h \ ld c,l
+     pop de \ add hl,de
+     pop de \ inc de
+     exx
+     inc bc
+     or a \ sbc hl,bc \ add hl,bc
+     exx
+     jr nc,nCrLoop
+     ret

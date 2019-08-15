@@ -1,0 +1,54 @@
+;By Galandros
+scroll_down:
+; a can be from 1 to 63
+; a can be multiplied by 4
+ add a,a
+ add a,a  ; a*4
+ ld l,a  ; hl = a*4
+ ld e,a
+ xor a
+ ld h,a
+ ld d,a
+ add hl,hl ; hl = a*8
+ add hl,de ; hl = a*12
+ ld e,a  ; de = 0
+
+ push hl  ; a*12 will needed later
+ push hl  ; 2 times
+ ex de,hl
+;carry is never set here
+; or a
+ sbc hl,de ; hl= -a*12, de=a*12
+ ld de,plotsscreen+767
+ add hl,de ; hl=plotsscreen+767-12*a
+ pop bc
+ push hl
+ ld hl,768+1
+;carry always set
+; or a
+ sbc hl,bc
+ ld b,h
+ ld c,l
+ pop hl
+ lddr
+;blank remaining area
+ ld h,d
+ ld l,e
+ ld (hl),$00
+ dec de
+ pop bc
+ dec bc
+ lddr
+ ret
+
+; ld hl,plotsscreen+767-12*a
+; ld de,plotsscreen+767
+; ld bc,768-12*a
+; lddr
+;     or
+; ld (hl),$00  ;; ld hl,plotsscreen
+; ld h,d   ;; ld (hl),$00
+; ld l,e   ;; ld de,hl+1
+; dec de   ;; ld bc,12*a-1
+; ld bc,12*a-1 ;; ldir
+; lddr   ;; ret

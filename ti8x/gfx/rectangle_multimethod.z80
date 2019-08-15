@@ -1,0 +1,325 @@
+;Contains code for 14 rectangle operations.
+;Poorly documented, by Zeda. Partially converted from hexadecimal.
+
+DrawRectToGraph:
+     ld hl,9340h
+;===============================================================
+DrawRectToBuffer:
+DrawRect:
+;===============================================================
+;Inputs:
+;     A is the type of rectangle to draw
+;        0 =White
+;        1 =Black
+;        2 =XOR
+;        3 =Black border
+;        4 =White border
+;        5 =XOR border
+;        6 =Black border, white inside
+;        7 =Black border, XOR inside
+;        8 =White border, black inside
+;        9 =White border, XOR inside
+;        10=Shift Up
+;        11=Shift Down
+;
+;
+;        14=pxlTestRect  (returns the number of on pixels in the rectangular region)
+;        15=pxlTestBorder (returns the number of on pixels on the border, good for collision detection)
+;     B is the height
+;     C is the Y pixel coordinate
+;     D is the width in pixels
+;     E is is the X pixel coordinate
+;===============================================================
+     di
+     push hl
+     pop ix
+     ex af,af'
+;Check if coords are negative
+     ld a,c
+     or a
+     jp p,$+9
+       add a,b
+       ret nc
+       ret z
+       ld b,a
+       ld c,0
+
+     ld a,e
+     or a
+     jp p,$+9
+       add a,d
+       ret nc
+       ret z
+       ld d,a
+       ld e,0
+;Check dimensions
+     ld a,b
+     or a
+     ret z
+     jp p,$+6
+       neg
+       ld b,a
+     add a,c
+     sub 64
+     jr c,$+6
+       neg
+       add a,b
+       ld b,a
+
+     ld a,d
+     or a
+     ret z
+     jp p,$+6
+       neg
+       ld d,a
+     add a,e
+     sub 96
+     jr c,$+6
+       neg
+       add a,d
+       ld d,a
+     ld a,c
+     cp 64
+     ret nc
+     ld a,e
+     cp 96
+     ret nc
+MakePattern:
+     push bc
+     ld hl,RectData
+     ld b,24
+     xor a
+     ld (hl),a
+     inc l
+     djnz $-2
+     ld hl,RectData
+     ld c,RectData+12
+     ld a,e
+     sub 8
+     jr c,$+6
+       inc l
+       inc c
+       jr $-6
+     add a,8
+     ld e,a
+     ld b,a
+     inc b
+     ld a,d
+     add a,e
+     ld e,a
+     ld a,1
+     rrca
+     djnz $-1
+     ld b,l
+     push af
+     ld l,c
+     or (hl)
+     ld (hl),a
+     ld l,b
+     pop af
+     dec a
+     scf
+     adc a,a
+     ld (hl),a
+     ld a,e
+     sub 8
+     jr c,$+10
+     jr z,$+10
+       inc l
+       ld (hl),-1
+       inc c
+       jr $-10
+     add a,8
+
+     ld b,a
+     or a
+     ld a,1
+     jr z,$+5
+     rrca
+     djnz $-1
+
+     ld b,l
+     push af
+     ld l,c
+     or (hl)
+     ld (hl),a
+     ld l,b
+     pop af
+     dec a
+     cpl
+     and (hl)
+     ld (hl),a
+     pop bc
+     ld a,b
+     ld b,0
+     ld h,b
+     ld l,c
+     add hl,hl
+     add hl,bc
+     add hl,hl
+     add hl,hl
+     push ix
+     pop bc
+     add hl,bc
+     ld b,a
+     ex af,af'
+     .db $CB,$67,$28,$10,$D6,$10,$F5,$0E,$18,$11
+     .dw RectData
+     .db $1A,$2F,$12,$13,$0D,$20,$F9,$F1
+
+     or a
+     jr nz,$+13h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$2F,$A6,$77,$13,$23,$0D,$20,$F7,$10,$F0,$C9
+
+     dec a
+     jr nz,$+12h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$B6,$77,$13,$23,$0D,$20,$F8,$10,$F1,$C9
+
+     dec a
+     jr nz,$+12h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$AE,$77,$13,$23
+     .db $0D,$20,$F8,$10,$F1,$C9
+
+     dec a
+     jr nz,$+26h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$B6,$77,$13,$23,$0D,$20,$F8,$05,$C8
+     .db $05,$28,$0F,$0E,$0C,$11
+     .dw RectData+12
+     .db $1A,$B6,$77,$13,$23,$0D,$20,$F8,$10,$F1,$04,$18,$DC
+
+     dec a
+     jr nz,$+28h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$A6,$AE,$77,$13,$23,$0D,$20,$F7,$05,$C8,$05,$28,$10,$0E,$0C,$11
+     .dw RectData+12
+     .db $1A,$A6,$AE,$77,$13,$23,$0D,$20,$F7,$10,$F0,$04,$18,$DA
+
+     dec a
+     jr nz,$+26h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$AE
+     .db $77,$13,$23,$0D,$20,$F8,$05,$C8,$05,$28,$0F,$0E,$0C,$11
+     .dw RectData+12
+     .db $1A,$AE,$77,$13,$23,$0D,$20,$F8
+     .db $10,$F1,$04,$18,$DC
+
+     dec a
+     jr nz,$+36h
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$B6,$77,$13,$23,$0D,$20,$F8,$05,$C8,$05
+     .db $28,$1F,$E5,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$A6,$AE,$77,$13,$23,$0D,$20,$F7,$E1,$0E,$0C,$11
+     .dw RectData+12
+     .db $1A
+     .db $B6,$77,$13,$23,$0D,$20,$F8,$10,$E1,$04,$18,$CC
+
+     .db $3D,$20,$33,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$B6,$77,$13
+     .db $23,$0D,$20,$F8,$05,$C8,$05,$28,$1E,$E5,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$AE,$77,$13,$23,$0D,$20,$F8,$E1
+     .db $0E,$0C,$11
+     .dw RectData+12
+     .db $1A,$B6,$77,$13,$23,$0D,$20,$F8,$10,$E2,$04,$18,$CD,$3D,$20,$34,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$A6,$AE,$77,$13,$23,$0D,$20,$F7,$05,$C8,$05,$28,$1E,$E5,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$B6
+     .db $77,$13,$23,$0D,$20,$F8,$E1,$0E,$0C,$11
+     .dw RectData+12
+     .db $1A,$AE,$77,$13,$23,$0D,$20,$F8,$10,$E2,$04,$18
+     .db $CC,$3D,$20,$35,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$A6,$AE,$77,$13,$23,$0D,$20,$F7,$05,$C8,$05,$28,$1F,$E5
+     .db $0E,$0C,$11
+     .dw RectData
+     .db $1A,$AE,$77,$13,$23,$0D,$20,$F8,$E1,$0E,$0C,$11
+     .dw RectData+12
+     .db $1A,$A6,$AE,$77,$13
+     .db $23,$0D,$20,$F7,$10,$E1,$04,$18,$CB,$3D,$20,$37,$05,$C8,$F3,$E5,$D9,$01,$0C,$00,$E1,$09,$D9,$0E
+     .db $0C,$11
+     .dw RectData
+     .db $D5,$D9,$D1,$D9,$1A,$2F,$A6,$D9,$47,$1A,$A6,$B0,$13,$23,$D9,$77,$13,$23,$0D,$20
+     .db $EF,$10,$E4,$0E,$0C,$11
+     .dw RectData
+     .db $1A,$2F,$A6,$77,$13,$23,$0D,$20,$F7,$FB,$C9
+
+     .db $3D,$20,$40,$F3,$C5
+     .db $11,$0C,$00,$19,$10,$FD,$2B,$E5,$D9,$11,$F4,$FF,$E1,$19,$D9,$C1,$05,$C8,$0E,$0C,$11
+     .dw RectData+11
+     .db $D5
+     .db $D9,$D1,$D9,$1A,$2F,$A6,$D9,$47,$1A,$A6,$B0,$1B,$2B,$D9,$77,$1B,$2B,$0D,$20,$EF,$10,$E4,$0E,$0C
+     .db $11
+     .dw RectData+11
+     .db $1A,$2F,$A6,$77,$1B,$2B,$0D,$20,$F7,$FB,$C9
+
+     dec a
+     ret z
+     dec a
+     ret z
+     exx
+     ld de,0
+     ld c,8
+     exx
+PxlTestRect:
+     dec a
+     jr nz,PxlTestBorder
+     ld c,12
+     ld de,RectData
+PxlTstRectLoop:
+       call PxlTestWithMask
+       djnz PxlTstRectLoop-5
+       exx
+;DE contains the number of pixels
+       ret
+PxlTestBorder:
+     dec a
+     ret nz
+     ld c,12
+     ld de,RectData
+     call PxlTestWithMask
+     dec b
+     jr z,PxlTestBorder-4
+     dec b
+     jr z,PxlTestBrdrEnd
+     ld c,12
+     ld de,RectData+12
+PxlTstBrdrLoop:
+       call PxlTestWithMask
+       djnz PxlTstBrdrLoop-5
+PxlTestBrdrEnd:
+     ld de,RectData
+     ld c,12
+     call PxlTestWithMask
+     exx
+;DE contains the number of on pixels
+       ret
+PxlTestWithMask:
+     ld a,(de)
+     and (hl)
+     exx
+     ld b,c
+     add a,a
+     jr nc,$+3
+     inc de
+     jr z,$+4
+     djnz $-6
+     exx
+     inc de
+     inc hl
+     dec c
+     jr nz,PxlTestWithMask
+     ret
