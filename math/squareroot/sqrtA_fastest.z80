@@ -1,0 +1,46 @@
+sqrtA:
+;Input: A
+;Output: D is the squareroot, A is the remainder (input-D^2)
+;Destroys: BC
+;speed: 161+{0,6}+{0,1}+{0,1}+{0,3}
+;min: 161cc
+;max: 172cc
+;avg: 166.5cc
+;45 bytes
+  ld d,$40
+
+  sub d
+  jr nc,+_
+  add a,d
+  ld d,0
+_:
+
+  set 4,d
+  sub d
+  jr nc,+_
+  add a,d
+  .db $01   ;start of ld bc,** which is 10cc to skip the next two bytes.
+_:
+  set 5,d
+  res 4,d
+  srl d
+
+  set 2,d
+  sub d
+  jr nc,+_
+  add a,d
+  .db $01   ;start of ld bc,** which is 10cc to skip the next two bytes.
+_:
+  set 3,d
+  res 2,d
+  srl d
+
+  inc d
+  sub d
+  jr nc,+_
+  add a,d
+  dec d
+_:
+  inc d
+  srl d
+  ret
