@@ -1,0 +1,17 @@
+;This version works like the hotspot routine, but takes width and height args
+;instead of a second coord
+;----------Hot spot detection-----------
+;inputs: b,c (first x and y cor)
+;        d,e (width and height)
+;        h,l (current x,y)
+;output: "c" flag [either true (set) or false (reset)]
+
+hdetectrect:
+  ld a,h
+  sub b
+  cp d
+  ret nc
+  ld a,l
+  sub c
+  cp e
+  ret
