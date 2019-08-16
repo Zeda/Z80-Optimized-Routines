@@ -2,29 +2,37 @@
 ;A=X
 
 GetPixelloc:
-   LD    H, 0
-   LD    D, H
-   LD    E, L
-   ADD   HL, HL
-   ADD   HL, DE
-   ADD   HL, HL
-   ADD   HL, HL
+;Input: (B,C) is (X,Y)
+;Output: A is the mask, HL is the byte the pixel is on, nc if out-of-bounds, B=0
+;Destroys: C
 
-   LD    E, A
-   SRL   E
-   SRL   E
-   SRL   E
-   ADD   HL, DE
+;Check bounds
+  ld a,c
+  cp 64
+  ret nc
+  ld a,b
+  cp 96
+  ret nc
 
-   LD    DE, PlotSScreen
-   ADD   HL, DE
-
-   AND   7
-
-   LD    A, $80
-   RET   Z
-   LD    B, A
-Loop:
-   RRCA
-   DJNZ   Loop
-   RET
+  ld b,0
+  ld h,b
+  ld l,c
+  add hl,hl
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  ld c,a
+  srl c
+  srl c
+  srl c
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+  and 7
+  ld b,a
+  ld a,$80
+  jr z,$+5
+  rrca
+  djnz $-1
+  scf
+  ret
