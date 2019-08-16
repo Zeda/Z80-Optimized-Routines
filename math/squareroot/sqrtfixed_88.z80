@@ -1,136 +1,32 @@
-SqrtHL_prec12:
-;input: HL
-;Output: HL
-;183 bytes
-    xor a
-    ld b,a
+;Adapted from Axe
 
-    ld e,l
-    ld l,h
-    ld h,a
-
-    add hl,hl
-    add hl,hl
-    cp h
-    jr nc,$+5
-    dec h
-    ld a,4
-
-    add hl,hl
-    add hl,hl
-    ld c,a
-    sub h
-    jr nc,$+6
-    cpl
-    ld h,a
-    inc c
-    inc c
-
-    ld a,c
-    add hl,hl
-    add hl,hl
-    add a,a
-    ld c,a
-    sub h
-    jr nc,$+6
-    cpl
-    ld h,a
-    inc c
-    inc c
-
-    ld a,c
-    add hl,hl
-    add hl,hl
-    add a,a
-    ld c,a
-    sub h
-    jr nc,$+6
-    cpl
-    ld h,a
-    inc c
-    inc c
-
-    ld a,c
-    ld l,e
-
-    add hl,hl
-    add hl,hl
-    add a,a
-    ld c,a
-    sub h
-    jr nc,$+6
-    cpl
-    ld h,a
-    inc c
-    inc c
-
-    ld a,c
-    add hl,hl
-    add hl,hl
-    add a,a
-    ld c,a
-    sub h
-    jr nc,$+6
-    cpl
-    ld h,a
-    inc c
-    inc c
-
-    ld a,c
-    add a,a \ ld c,a
-    add hl,hl
-    add hl,hl
-    jr nc,$+6
-    sub h \ jp $+6
-    sub h
-    jr nc,$+6
-    inc c \ inc c
-    cpl
-    ld h,a
-
-    ld a,l
-    ld l,h
-    add a,a
-    ld h,a
-    adc hl,hl
-    adc hl,hl
-    sll c \ rl b
-    sbc hl,bc
-    jr nc,$+3
-    add hl,bc
-    sbc a,a \ add a,a \ inc a \ add a,c \ ld c,a
-
-;iteration 9
-    add hl,hl \ add hl,hl
-    sll c \ rl b
-    sbc hl,bc
-    jr nc,$+3
-    add hl,bc
-    sbc a,a \ add a,a \ inc a \ add a,c \ ld c,a
-
-    add hl,hl \ add hl,hl
-    sll c \ rl b
-    sbc hl,bc
-    jr nc,$+3
-    add hl,bc
-    sbc a,a \ add a,a \ inc a \ add a,c \ ld c,a
-
-    add hl,hl \ add hl,hl
-    sll c \ rl b
-    sbc hl,bc
-    jr nc,$+3
-    add hl,bc
-    sbc a,a \ add a,a \ inc a \ add a,c \ ld c,a
-
-    add hl,hl \ add hl,hl
-    sll c \ rl b
-    sbc hl,bc
-    jr nc,$+3
-    add hl,bc
-    sbc a,a \ add a,a \ inc a \ add a,c \ ld c,a
-;12th iteration completed
-; output in BC
-    srl b \ rr c
-    ld h,b
-    ld l,c
-    ret
+sqrtfixed_88:
+;Inputs: A.C
+;Output: D.E contains the squareroot
+;speed: 1482+12{0,17}
+;min: 1482cc
+;max: 1686cc
+;avg: 1584cc
+;35 bytes
+	ld	b,12
+	ld	de,0
+	ld	h,d
+	ld	l,e
+__Sqrt88Loop:
+	sub	$40
+	sbc	hl,de
+	jr	nc,__Sqrt88Skip
+	add	a,$40
+	adc	hl,de
+__Sqrt88Skip:
+	ccf
+	rl	e
+	rl	d
+	sla	c
+	rla
+	adc	hl,hl
+	sla	c
+	rla
+	adc 	hl,hl
+	djnz	__Sqrt88Loop
+	ret
