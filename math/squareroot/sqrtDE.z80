@@ -1,15 +1,15 @@
 sqrtDE:
 ;returns HL as the sqrt, DE as the remainder
-;34 bytes
-;min: 931cc
-;max: 1123cc
-;avg: 1027cc
-;931+8{24,0}
+;33 bytes
+;min: 928cc
+;max: 1120cc
+;avg: 1024cc
+;928+8{24,0}
 
-  ld bc,$8000
-  ld h,c
-  ld l,c
-  ld a,c
+  ld b,$80
+  xor a
+  ld h,a
+  ld l,a
 sqrt_loop:
   srl b
   rra
