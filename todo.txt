@@ -1,5 +1,2 @@
-rewrite DEHL_Times_A
-        ncrHLDE
-        sqrtE
-        sqrtL
-        sqrtHLDE
+rewrite
+    ncrHLDE
