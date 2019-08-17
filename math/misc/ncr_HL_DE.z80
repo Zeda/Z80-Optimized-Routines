@@ -1,3 +1,5 @@
+;Written by Zeda
+
 ; Requires
 ;    mul16          ;BC*DE ==> DEHL
 ;    DEHL_Div_BC    ;DEHL/BC ==> DEHL

@@ -1,3 +1,5 @@
+;Written by Zeda
+
 sqrtfixed_88:
 ;Input: A.E ==> D.E
 ;Output: DE is the sqrt, AHL is the remainder

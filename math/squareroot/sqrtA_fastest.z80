@@ -1,3 +1,5 @@
+;Written by Zeda
+
 sqrtA:
 ;Input: A
 ;Output: D is the squareroot, A is the remainder (input-D^2)
