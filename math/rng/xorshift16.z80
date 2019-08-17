@@ -1,0 +1,31 @@
+;Wriiten by John Metcalf
+
+;Note: uses SMC
+
+; 16-bit xorshift pseudorandom number generator
+; 20 bytes, 86 cycles (excluding ret)
+
+; returns   hl = pseudorandom number
+; corrupts   a
+
+xrnd:
+  ld hl,1       ; seed must not be 0
+
+  ld a,h
+  rra
+  ld a,l
+  rra
+  xor h
+  ld h,a
+  ld a,l
+  rra
+  ld a,h
+  rra
+  xor l
+  ld l,a
+  xor h
+  ld h,a
+
+  ld (xrnd+1),hl
+
+  ret

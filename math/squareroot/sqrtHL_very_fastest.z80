@@ -1,0 +1,100 @@
+;Written by John Metcalf
+; fast 16-bit integer square root
+; 93 bytes, 354-389 cycles (average 372)
+; v2 - 3 t-state optimization spotted by Russ McNulty
+
+; call with hl = number to square root
+; returns    a = square root
+; corrupts  hl, de
+
+  ld a,h
+  ld de,0B0C0h
+  add a,e
+  jr c,sq7
+  ld a,h
+  ld d,0F0h
+sq7:
+
+; ----------
+
+  add a,d
+  jr nc,sq6
+  res 5,d
+  db 254
+sq6:
+  sub d
+  sra d
+
+; ----------
+
+  set 2,d
+  add a,d
+  jr nc,sq5
+  res 3,d
+  db 254
+sq5:
+  sub d
+  sra d
+
+; ----------
+
+  inc d
+  add a,d
+  jr nc,sq4
+  res 1,d
+  db 254
+sq4:
+  sub d
+  sra d
+  ld h,a
+
+; ----------
+
+  add hl,de
+  jr nc,sq3
+  ld e,040h
+  db 210
+sq3:
+  sbc hl,de
+  sra d
+  ld a,e
+  rra
+
+; ----------
+
+  or 010h
+  ld e,a
+  add hl,de
+  jr nc,sq2
+  and 0DFh
+  db 218
+sq2:
+  sbc hl,de
+  sra d
+  rra
+
+; ----------
+
+  or 04h
+  ld e,a
+  add hl,de
+  jr nc,sq1
+  and 0F7h
+  db 218
+sq1:
+  sbc hl,de
+  sra d
+  rra
+
+; ----------
+
+  inc a
+  ld e,a
+  add hl,de
+  jr nc,sq0
+  and 0FDh
+sq0:
+  sra d
+  rra
+  cpl
+  ret
