@@ -8,7 +8,7 @@ uitoa_8:
 ;Output:
 ;   The number is converted to a null-terminated string at HL
 ;Destroys:
-;   Up to five bytes at HL
+;   Up to four bytes at HL
 ;   All registers preserved.
 ;on 0 to 9:     238              D=0
 ;on 10 to 99:   244+20D          D=0 to 9
