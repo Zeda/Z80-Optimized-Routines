@@ -1,0 +1,26 @@
+dispi16:
+;Inputs:
+;   HL is a 16-bit signed integer
+;Output:
+;   HL is printed to the screen at (curCol, curRow)
+;   curCol is set to 0
+;   curRow is advanced.
+;      If curRow is 8, then the contents of the homescreen
+;      are shifted up one row and curRow is set to 7.
+;Destroys:
+;   7 bytes at OP1
+;Notes: Preserves registers.
+  push hl
+  push de
+  push bc
+  push af
+  ex de,hl
+  ld hl,OP1
+  call itoa_16
+  bcall(_PutS)
+  bcall(_NewLine)
+  pop af
+  pop bc
+  pop de
+  pop hl
+  ret
