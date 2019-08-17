@@ -1,3 +1,6 @@
+#ifndef included_itoa_8
+#define included_itoa_8
+
 ;Written by Zeda
 ;Converts an 8-bit signed integer to a string
 
@@ -57,3 +60,5 @@ itoa_pos:
   pop de
   pop hl
   ret
+
+#endif

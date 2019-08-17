@@ -1,3 +1,6 @@
+#ifndef included_itoa_16
+#define included_itoa_16
+
 ;written by Zeda
 ;Converts a 16-bit signed integer to an ASCII string.
 
@@ -78,3 +81,6 @@ _:
   pop bc
   pop de
   ret
+
+
+#endif

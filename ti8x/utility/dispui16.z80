@@ -1,3 +1,9 @@
+#ifndef included_dispui16
+#define included_dispui16
+
+#include "conversion/uitoa_16.z80"
+
+
 dispui16:
 ;Inputs:
 ;   HL is a 16-bit unsigned integer
@@ -24,3 +30,5 @@ dispui16:
   pop de
   pop hl
   ret
+
+#endif

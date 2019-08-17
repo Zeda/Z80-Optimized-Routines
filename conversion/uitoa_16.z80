@@ -1,3 +1,6 @@
+#ifndef included_uitoa_16
+#define included_uitoa_16
+
 ;written by Zeda
 ;Converts a 16-bit unsigned integer to an ASCII string.
 
@@ -51,3 +54,5 @@ uitoa_16:
   pop bc
   pop de
   ret
+
+#endif

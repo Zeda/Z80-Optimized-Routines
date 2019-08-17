@@ -1,3 +1,8 @@
+#ifndef included_dispi8
+#define included_dispi8
+
+#include "conversion/itoa_8.z80"
+
 dispi8:
 ;Inputs:
 ;   A is an 8-bit signed integer to display
@@ -23,3 +28,5 @@ dispi8:
   pop de
   pop hl
   ret
+
+#endif

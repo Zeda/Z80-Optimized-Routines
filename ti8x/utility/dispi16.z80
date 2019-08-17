@@ -1,3 +1,9 @@
+#ifndef included_dispi16
+#define included_dispi16
+
+#include "conversion/itoa_16.z80"
+
+
 dispi16:
 ;Inputs:
 ;   HL is a 16-bit signed integer
@@ -24,3 +30,5 @@ dispi16:
   pop de
   pop hl
   ret
+
+#endif

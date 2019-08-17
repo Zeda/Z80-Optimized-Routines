@@ -1,4 +1,10 @@
-;Made by Zeda.
+#ifndef included_fixed88_to_str
+#define included_fixed88_to_str
+
+#include "conversion/itoa_8.z80"
+
+
+;Written by Zeda.
 ;This converts a fixed-point number to a string.
 ;It displays up to 3 digits after the decimal.
 
