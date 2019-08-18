@@ -1,0 +1,68 @@
+;Written by Zeda
+;Draws an 8x8 tile to a vertically aligned graphics buffer.
+;This uses a 12x8 grid.
+
+;Uncomment this if you don't need to check coordinate bounds
+;This will save 31cc (~10%) and 8 bytes
+;#define drawtile_v_NO_BOUNDS
+
+
+;if drawtile_v_FAST is defined, we'll unroll the ldir
+;if FAST is defined, we'll assume you want this, but if not, you'll need to
+;manually define it.
+;This saves 45cc, adds 11 bytes
+#ifdef FAST
+#define drawtile_v_FAST
+#endif
+
+drawtile:
+;Inputs : BC = (x,y), DE points to the sprite
+;Output: DE points to the next sprite, HL points to the location of the next tile down.
+; 303 clock cycles if in bounds.
+;Returns DE pointing to the next sprite
+
+#ifdef drawtile_v_NO_BOUNDS
+  ld a,c
+  cp 8
+  ret nc
+  ld a,b
+  cp 12
+  ret nc
+  or a
+  ld l,0
+#else
+  ;We need to reset the carry flag, set L = 0, A = B
+  xor a
+  ld l,a
+  or b
+#endif
+
+  rra \ rr l
+  rra \ rr l
+  ld h,a
+
+  ld a,c
+  add a,a
+  add a,a
+  add a,a
+  add a,l
+  ld l,a
+
+  ld bc,gbuf     ;change this as needed
+  add hl,bc
+  ex de,hl
+
+#ifdef drawtile_v_FAST
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+#else
+  ld bc,8
+  ldir
+#endif
+  ret

@@ -1,0 +1,30 @@
+;Adapted from Z80 Bits
+;"The following routine calculates standard CRC-CCITT bit-by-bit using
+;polynomial 1021h. Another common scheme CRC-16 uses polynomial A001h and starts
+;with value 0 (so it's likely that you misinterpret bunch of zeros as valid data).
+;It might be useful to extend the code to use 16-bit byte counter."
+
+Crc16:
+;Input: DE = address of input data, C = number of bytes to process
+;Output: HL = CRC
+	ld	hl,FFFFh
+crcRead:
+	ld	a,(de)
+	inc	de
+	xor	h
+	ld	h,a
+	ld	b,8
+CrcByte:
+	add	hl,hl
+	jr	nc,crcNext
+	ld	a,h
+	xor	10h
+	ld	h,a
+	ld	a,l
+	xor	21h
+	ld	l,a
+crcNext:
+	djnz	CrcByte
+	dec	c
+	jr	nz,crcRead
+	ret
