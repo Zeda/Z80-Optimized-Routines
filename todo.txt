@@ -1,0 +1,7 @@
+Scavenge code from
+    Z80 Bits    http://map.grauw.nl/sources/external/z80bits.html
+    Z80 Heaven  http://z80-heaven.wikidot.com/forum/t-676164/column-major-graphics-buffer-format
+    z80float    https://github.com/Zeda/z80float
+    Grammer     https://github.com/Zeda/Grammer2
+    Axe
+    Doors CS7   https://github.com/KermMartian/Doors_CS_7
