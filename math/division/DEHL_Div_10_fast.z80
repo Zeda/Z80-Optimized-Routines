@@ -6,25 +6,22 @@ DEHL_Div_10:
 ;     A is the remainder
 ;     B is the remainder
 ;     C is 10
-;1293cc~1322cc
-;61 bytes
+;1300cc~1329cc
+;49 bytes
     xor a
-    ld bc,050Ah
+    ld bc,05F6h
     rl d \ rla
     rl d \ rla
     rl d \ rla
-    rl d \ rla \ sub c \ jr nc,$+3 \ add a,c \ djnz $-7
+    rl d \ rla \ add a,c \ jr c,$+3 \ sub c \ djnz $-7
     ld b,8
-    rl e \ rla \ sub c \ jr nc,$+3 \ add a,c \ djnz $-7
+    rl e \ rla \ add a,c \ jr c,$+3 \ sub c \ djnz $-7
     ld b,8
-    rl h \ rla \ sub c \ jr nc,$+3 \ add a,c \ djnz $-7
+    rl h \ rla \ add a,c \ jr c,$+3 \ sub c \ djnz $-7
     ld b,8
-    rl l \ rla \ sub c \ jr nc,$+3 \ add a,c \ djnz $-7
-    ld b,a
-    ld a,l
-    rra \ ccf \ ld l,a
-    ld a,h \ rra \ ccf \ ld h,a
-    ld a,e \ rra \ ccf \ ld e,a
-    ld a,d \ rra \ ccf \ ld d,a
-    ld a,b
+    rl l \ rla \ add a,c \ jr c,$+3 \ sub c \ djnz $-7
+
+    adc hl,hl
+    rl e
+    rl d
     ret
