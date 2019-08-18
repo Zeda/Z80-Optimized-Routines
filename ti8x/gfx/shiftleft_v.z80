@@ -1,0 +1,14 @@
+;written by Zeda
+;Shift a vertically aligned buffer left
+
+
+shiftleft:
+     ld ix,buf0+768-65
+     ld b,64
+shiftleftloop:
+     sla (ix+64) \ rl (ix) \ rl (ix-64) \ rl (ix-128) \ dec ixh  ;100
+     rl (ix+64) \ rl (ix) \ rl (ix-64) \ rl (ix-128) \ dec ixh  ;100
+     rl (ix+64) \ rl (ix) \ rl (ix-64) \ rl (ix-128)  ;92
+     inc ixh \ inc ixh \ dec ix ; 26
+     djnz shiftleftloop
+     ret

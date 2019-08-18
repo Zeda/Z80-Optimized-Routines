@@ -1,0 +1,37 @@
+;Written by Zeda
+;This code is for getting the address and mask for a pixel on a _vertical_
+;aligned buffer. (Stored in 12 columns of 64 bytes each.)
+
+getpixelloc:
+;column-major order
+;Input: bc = (x,y)
+;Output: nc if out-of-bounds, HL is the offset into a column-major buffer, A is the pixel mask
+     ld a,c
+     cp 64
+     ret nc
+     ld a,b
+     cp 96
+     ret nc
+; a = x
+; compute (x/8)*64
+; dividing by 8 is three right shifts. We then multiply by 64 (6 left shifts). Shifting right 3 times then left 3 times has a net effect of setting the lower three bits to 0. So instead, we just set the lower three bits to 0 and shift left three times.
+     and %11111000
+     ld h,0
+     add a,a      ;a is less than 128, so no information is lost here, and it is 7 cycles faster than add hl,hl
+     ld l,a
+     ld a,b        ;we will need this for later
+     ld b,h       ;h = 0 at this point, so now BC  =Y
+     add hl,hl
+     add hl,hl
+     add hl,bc
+; HL = (x/8)*64+y
+; now a = x , HL is the offset into the buffer
+; we need to compute the pixel mask
+     and 7
+     ld b,a
+     ld a,$80
+     ret z
+     rrca
+     djnz $-1
+     scf
+     ret

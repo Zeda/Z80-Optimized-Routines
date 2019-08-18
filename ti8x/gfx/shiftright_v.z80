@@ -1,0 +1,14 @@
+;written by Zeda
+;Shift a vertically aligned buffer right
+
+shiftright:
+;20446 cc's needed
+     ld ix,gbuf+128
+     ld b,64
+shiftrightloop:
+     srl (ix-128) \ rr (ix-64) \ rr (ix) \ rr (ix+64) \ inc ixh  ;100    incrementing the MSB of IX is the same as adding 256
+     rr (ix-128) \ rr (ix-64) \ rr (ix) \ rr (ix+64) \ inc ixh   ;100
+     rr (ix-128) \ rr (ix-64) \ rr (ix) \ rr (ix+64)  ;92
+     dec ixh \ dec ixh \ inc ix ; 26
+     djnz shiftrightloop
+     ret
