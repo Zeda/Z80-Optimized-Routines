@@ -3,6 +3,21 @@ vbufToLCD:
     push hl
     push bc
     push af
+
+;This chunk of code sets the LCD increment mode
+;This is how the OS has it, so you probably don't need to change it
+;    ld a,5
+;    out (16),a
+;    in a,(16) \ add a,a \ jr c,$-3
+
+;This chunk of code moves the LCD pointer to the top row of pixels
+;You only need this if there are other routines that might mess with the LCD
+;pointer (like OS interrupts). I set this once at the start of my programs.
+;    ld a,80h
+;    out (16),a
+;    in a,(16) \ add a,a \ jr c,$-3
+
+
 buf0=$+1
     ld hl,plotSScreen
     ld a,20h
