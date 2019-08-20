@@ -1,0 +1,63 @@
+updatelcd_partial:
+;Inputs:
+;   H is the left column to start at (0 to 11)
+;   L is the upper row to start at (0 to 63)
+;   C is the width in columns (8 pixels per column)
+;   B is the height in rows (1 pixel per row)
+;NOTES:
+;   Assumes that the lcd autoincrement is set to increment X (what we see as moving down)
+;   Assumes interrupts are either OFF or won't interfere with the LCD
+;   Does not do error checking on inputs!
+;   This should copy safely (directly polls the LCD port)
+;60 bytes
+  push bc
+
+  ld d,h
+  ld e,l
+
+  ld a,h
+  ld h,0
+  ld b,h
+  ld c,l
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  add hl,hl
+  ld c,a
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+
+  set 7,e
+  set 5,d
+  pop bc
+;B is height
+;C is width
+;HL points to the screen data
+;D is the lcd col base
+;E is the lcd row base
+
+UpdateLCD_partial_loop:
+  ld a,d
+  out (16),a
+  in a,(16) \ rla \ jr c,$-3
+  ld a,e
+  out (16),a
+  push hl
+  push de
+  push bc
+  ld de,12
+UpdateLCD_partial_col:
+  in a,(16) \ rla \ jr c,$-3
+  ld a,(hl)
+  add hl,de
+  out (17),a
+  djnz UpdateLCD_partial_col
+  pop bc
+  pop de
+  pop hl
+  inc hl
+  inc d
+  dec c
+  jr nz,UpdateLCD_partial_loop
+  ret

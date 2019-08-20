@@ -1,0 +1,53 @@
+;shift the gbuf down by A bytes
+
+shiftgbufdown_A:
+;If A is 0, do nothing
+  or a
+  ret z
+
+;If A is 64 or more, just set it to 64
+  cp 64
+  jr c,$+4
+  ld a,64
+
+;Multiply A by 12
+  ld l,a
+  ld h,0
+  add a,a
+  add a,l
+  ld l,a
+  add hl,hl
+  add hl,hl
+
+;HL is the number of bytes that we will zero
+  push hl
+  ld b,h
+  ld c,l
+  ld hl,plotSScreen+767
+  ld d,h
+  ld e,l
+  sbc hl,bc
+  ;need to move 768-BC bytes
+  xor a
+  sub c
+  ld c,a
+  ld a,3
+  sbc a,b
+  ld b,a
+
+;if BC is 0, do  nothing!
+  or c
+  jr z,$+4
+  lddr
+
+;now DE points to the bottom of where we need to start zeroing
+  ld h,d
+  ld l,e
+  ld (hl),b
+  dec de
+
+  pop bc   ;Guaranteed that BC is not zero!
+  dec bc
+  lddr
+  ret
+.echo $-shiftgbufdown_A
