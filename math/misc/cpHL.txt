@@ -1,4 +1,4 @@
-I learned these from calc84maniac:
+"I learned these from calc84maniac:"
 
 Compare HL to DE:
     or a
@@ -12,4 +12,4 @@ Compare HL to BC:
     add hl,bc
 
 
-These have similar flags to that of the `cp` instruction. At the very least, you get the zero and carry flag identical.
+"These have similar flags to that of the `cp` instruction. At the very least, you get the zero and carry flag identical."

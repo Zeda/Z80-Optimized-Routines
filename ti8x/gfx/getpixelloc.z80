@@ -1,6 +1,3 @@
-;H=Y
-;A=X
-
 GetPixelloc:
 ;Input: (B,C) is (X,Y)
 ;Output: A is the mask, HL is the byte the pixel is on, nc if out-of-bounds, B=0
