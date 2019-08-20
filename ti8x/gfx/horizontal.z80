@@ -1,26 +1,29 @@
 ;Fast Horizontal Line
-;Optimized by Fallen Ghost, from calc84maniac's routine
+
 
 horizontal:
 ;Input:
 ;   A is the row
 ;Output:
 ;   Horizontal line at A
-;Destroys:
-;   AF,BC,HL
-
- ld l,a
- ld h,0
- add a,a
- add a,l
- ld l,a
- add hl,hl
- add hl,hl
- ld bc,plotsscreen
- add hl,bc
- ld b,12
-horizloop:
- ld (hl),%11111111
- inc hl 
- djnz horizloop
- ret
+  ld bc,plotSScreen
+horizontal_buf:
+;Input:
+;   A is the row
+;   BC is the buffer
+;Output:
+;   Horizontal line at A
+  ld l,a
+  ld h,0
+  add a,a
+  add a,l
+  ld l,a
+  add hl,hl
+  add hl,hl
+  add hl,bc
+  ld bc,$0CFF
+_:
+  ld (hl),c
+  inc hl
+  djnz -_
+  ret

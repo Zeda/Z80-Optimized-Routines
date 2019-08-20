@@ -1,82 +1,213 @@
-;Written by Will_W on Cemetech
-;only works on small areas, large areas can easily overflow the stack and frick stuff up.
+Flood:
+;Inputs:
+;     HL points to the buffer (cannot be at saveSScreen)
+;     BC=(x,y)
+;Needs these RAM addresses:
+;     TempWord1
+;     TempWord2
+;     TempWord3
 
-;l = y
-;b = x
+     ld hl,(TempWord1)
+     push bc
+     ld de,saveSScreen
+     xor a
+     ld bc,768
+       ld (de),a
+       inc de
+       dec c
+       jr nz,$-3
+       dec b
+       jr nz,$-6
+     pop bc
+     push bc
+     call GetPixelLoc
+     pop bc
+     ret nc
+     ld de,(TempWord1)
+     add hl,de
+     and (hl)
+     ret nz
 FloodFill:
-   xor a
-   ld d,0
-   push de;
-   push af
-   ld a,b
-   ld e,l
-   ld h,00h
-   ld d,h
-   add hl,de
-   add hl,de
-   add hl,hl
-   add hl,hl;y offset * 12
-   ld e,a
-   and 07h; bit offset within byte
-   ld c,a
-   srl e
-   srl e
-   srl e
-   add hl,de; byte number in which to start
-   ld de,gbuf
-   add hl,de; address of byte
-   ld b,a
-   inc b
-   xor a
-   scf
-Loop1:;bit offset to mask
-   rla
-   djnz Loop1
-   push hl;byte
-   push af;mask
-MainLoop:
-   pop bc
-   pop hl
-   ld a,b
-   or h;a = 0 and h = 0
-   ret z
-   ld a,b
-   ;expand left
-   rlca
-   jp nc,Skip1;jump if bit to left is in same byte
-   dec hl
-   bit 0,(hl)
-   jp nz,Skip2;jump if not expanding there
-   set 0,(hl)
-   push hl
-   push af;mask
-Skip2:;inc hl and keep on going
-   inc hl
-   jp Skip3
-Skip1:;expand left if within same byte
-   and (hl)
-   jp nz,Skip3;jump if not expanding
-   ld a,b
-   rlca
-   push hl
-   push af
-   or (hl)
-   ld (hl),a
-Skip3:;expand right
-   ld a,b
-   rrca
-   jp nc,Skip4;jump if bit to right is in same byte
-   inc hl
-   bit 7,(hl)
-   jp nz,Skip5;jump if not expanding
-   set 7,(hl)
-   push hl
-   push af
-Skip5:;finish off expansion
-   inc hl
-   jp Skip6;done with right, now up
-Skip4:;expand right within same byte
-   and (hl)
-   jp nz,Skip6;expand up
-   ld a,b
-   rr
+     ld de,1   ;Direction
+;DE is the direction (x,y)
+;BC is the current coordinates
+FloodFillLoop:
+     push bc
+     call GetPixelLoc
+     jr nc,ChangeDirection
+     push hl
+     push af
+     ld bc,(TempWord1)
+     add hl,bc
+     and (hl)
+     ld (TempWord3),hl
+     pop hl
+     ld a,h
+     pop hl
+     jr nz,ChangeDirection
+
+     ld bc,saveSScreen
+     add hl,bc
+     ld b,a
+     or (hl)
+     ld (hl),a
+     ld a,b
+
+
+
+;     ld bc,saveSScreen
+;     add hl,bc
+;     or (hl)
+;     ld (hl),a
+
+;     pop hl
+;     ld bc,(TempWord1)
+;     add hl,bc
+;     pop af
+;     ld b,a
+;     and (hl)
+;     ld a,b
+;     jr nz,ChangeDirection
+
+     ld hl,(TempWord3)
+     pop bc
+     ld (TempWord2),bc
+     or (hl)
+     ld (hl),a
+FloodFillLoop0:
+     ld a,d
+     add a,b
+     ld b,a
+     ld a,e
+     add a,c
+     ld c,a
+     jp FloodFillLoop
+ChangeDirection:
+     pop bc
+     ld bc,(TempWord2)
+     ld a,d
+     or a
+     jr nz,UpDown
+       call CheckLeftRight
+       jp z,FloodFillLoop0
+       jr NextPath
+UpDown:
+     call CheckUpDown
+     jp z,FloodFillLoop0
+NextPath:
+     ld hl,saveSScreen
+     xor a
+     ld d,a
+     ld e,a
+     ld c,64
+     ld b,12
+PathFind:
+       cp (hl)
+       jr z,$+15
+         push bc
+         push de
+         push hl
+         ld a,(hl)
+         call PathFound
+         pop hl
+         jr z,PathSelected
+         xor a
+         pop de
+         pop bc
+       inc hl
+       inc d
+       djnz PathFind
+       ld d,0
+       inc e
+       dec c
+       jr nz,PathFind-2
+     jp BufferToLCD
+PathSelected:
+     pop hl
+     pop hl
+     jp FloodFillLoop0
+PathFound:
+     ld c,e
+     ld b,d
+     sla b
+     sla b
+     sla b
+     dec b
+     ld a,(hl)
+FindXVal:
+       inc b
+       add a,a
+       jr nc,$-2
+     ld (TempWord2),a
+     ld (TempWord3),bc
+;Now BC has the adjusted coordinates
+     call CheckLeftRight
+     ret z
+     call CheckUpDown
+     ret z
+     call GetPixelLoc
+     ld bc,saveSScreen
+     add hl,bc
+     cpl
+     and (hl)
+     ld (hl),a
+     ld a,(TempWord2)
+     ld bc,(TempWord3)
+     or a
+     jr nz,FindXVal
+     inc a
+     ret
+CheckLeftRight:
+     ld de,$FF00
+     push bc
+     dec b
+     call GetPixelLoc
+     jr nc,$+11
+       ld bc,(TempWord1)
+       add hl,bc
+       and (hl)
+       jr nz,$+4
+       pop bc
+       ret z
+     pop bc
+     ld d,1
+     push bc
+     inc b
+     call GetPixelLoc
+     jr nc,$+11
+       ld bc,(TempWord1)
+       add hl,bc
+       and (hl)
+       jr nz,$+4
+       pop bc
+       ret z
+     inc b
+     pop bc
+     ret
+CheckUpDown:
+     ld de,$00FF
+     push bc
+     dec c
+     call GetPixelLoc
+     jr nc,$+11
+       ld bc,(TempWord1)
+       add hl,bc
+       and (hl)
+       jr nz,$+4
+       pop bc
+       ret z
+     pop bc
+     ld e,1
+     push bc
+     inc c
+     call GetPixelLoc
+     jr nc,$+11
+       ld bc,(TempWord1)
+       add hl,bc
+       and (hl)
+       jr nz,$+4
+       pop bc
+       ret z
+     inc c
+     pop bc
+     ret

@@ -1,61 +1,72 @@
-;Signed division AHL/DE created by matrefeytontias
+;Signed division CHL/DE by Zeda, inspired by code from matrefeytontias.
 
-sDiv24_16:
- xor d
- push af
- xor d
- ld b, a
- jp p, divdPos
- xor a
- sub l
- ld l, a
- ld a, 0
- sbc a, h
- ld h, a
- ld a, 0
- sbc a, b
- ld b, a
-divdPos:
- bit 7, d
- jr z, divrPos
- xor a
- sub e
- ld e, a
- ld a, 0
- sbc a, d
- ld d, a
- ld a, b
-divrPos:
+;signed CHL/DE
+sdiv24_16:
+;signed CHL/DE ==> CHL, |remainder| is DE
 
- push hl
- pop ix
- ld hl, 0
- ld b, 24
-divLoop:
- add ix, ix
- rla
- adc hl, hl
- sbc hl, de
- jr nc, $ + 4
- add hl, de
- ; jp nc, xxxx
- ; it works because the carry can not be set and "inc ix" is 2 bytes
- .db $D2
- inc ix
- djnz divLoop
+;Get the sign of the result
+  ld a,c
+  xor d
+  push af
 
- push ix
- pop hl
- ld b, a
- pop af
- ld a, b
- ret p
- xor a
- sub l
- ld l, a
- ld a, 0
- sbc a, h
- ld h, a
- ld a, 0
- sbc a, b
- ret
+;Make BHL positive
+  xor d
+  jp p,+_
+  xor a
+  sub l
+  ld l,a
+  ld a,0
+  sbc a,h
+  ld h,a
+  sbc a,a
+  sub c
+  ld c,a
+_:
+
+;make DE negative
+  bit 7,d
+  jr z,+_   ;setting DE negative
+  xor a
+  sub e
+  ld e,a
+  sbc a,a
+  sub d
+  ld d,a
+  ld a,c
+_:
+
+  ld b,24
+  push hl
+  pop ix
+  ld hl,0
+
+div2416loop:
+  add ix,ix
+  rla
+  adc hl,hl
+  add hl,de
+  jr c,+_
+  sbc hl,de
+  .db $DA     ;start or `jp c,**`
+_:
+  inc ixl
+  djnz div2416loop
+  ld c,a
+  ex de,hl    ;DE is remainder
+
+  push ix
+  pop hl
+
+;restore sign
+  pop af
+  ret p
+  xor a
+  sub l
+  ld l,a
+  ld a,b
+  sbc a,h
+  ld h,a
+  sbc a,a
+  sub c
+  ld c,a
+  ret

@@ -1,52 +1,18 @@
-;+-----+----------------------------------------------------+
-;| ALH | > PIX <  Put a pixel in Graph Backup ¦  a=x e=y    |
-;+-----+----------------------------------------------------+
-;/-----| PIX |----------------------------------------------\
+plotpixel:
+;   (B,C) is (x,y)
+;   A is the method:
+;     0 is white
+;     1 is black
+;     2 is inverted
+;     3+ is a pixel test (returns z if off, nz if on)
 
-PIX:
-;       push    af            ; Uncomment these to save regs..
-;       push    de
-
-
-       ld      d,0           ; Do y*12
-       sla     e
-       sla     e
-       ld      hl,0
-       add     hl,de
-       add     hl,de
-       add     hl,de
-
-       ld      d,0           ; Do x/8
-       ld      e,a
-       srl     e
-       srl     e
-       srl     e
-       add     hl,de
-       ld      de,gbuf
-       add     hl,de         ; Add address to graphbuf
-
-       ld      de,0007h      ; Get the remainder of x/8
-       and     e
-       ld      e,a
-       ld      IX,pixtable   ; Look up in table pixel to set
-       add     IX,de
-       ld      a,(IX+0)      ; and load this
-
-       or      (HL)          ; 'xor' toggle, 'and' cpl to clear
-       ld      (HL),a
-
-;               pop     de
-;               pop     af
-
-
-       ret
-
-pixtable:
-       .db     10000000b
-       .db     01000000b
-       .db     00100000b
-       .db     00010000b
-       .db     00001000b
-       .db     00000100b
-       .db     00000010b
-       .db     00000001b
+  inc a
+  push af
+  call getpixelloc
+  pop bc
+  djnz $+3 \ or (hl)
+  djnz $+3 \ xor (hl)
+  djnz $+3 \ and (hl)
+  djnz $+4 \ cpl \ and (hl)
+  ld (hl),a
+  ret

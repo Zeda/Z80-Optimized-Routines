@@ -1,23 +1,28 @@
-;written by Anakclusmos
-CheckKey:
-;Input:  a=getcsc keycode
-;Output: z flag set if pressed, nz if not
-  ld b,$FE
-  ld c,$01
-ck_loop:
-  dec a
-  or a
-  jr z,ck_getkey
-  rlc c
-  jr nc,ck_loop
-  rlc b
-  jr ck_loop
-ck_getkey:
-  ld a,$FF
-  out (1),a
-  ld a,b
-  out (1),a
-  nop \ nop
+checkkey:
+;Input:  A is the key code
+;Output: z flag is set if the key is pressed, reset otherwise.
+;32 bytes
+  sub 1
+  ret c
+  ld b,a
+  and 7
+  ld c,a
+  xor b
+  rra
+  rra
+  rra
+  ld b,a
+  inc b
+  ld a,$7F
+  rlca
+  djnz $-1
+  out (1),a   ;set the group, now get the key
+  ld b,c
+  inc b
+  ld a,$80
+  rlca
+  djnz $-1
+  ld c,a
   in a,(1)
   and c
   ret
