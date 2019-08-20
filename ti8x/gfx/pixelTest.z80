@@ -1,0 +1,7 @@
+pixelTest:
+;(B,C) is (x,y)
+;Returns z if the pixel is off, nz if it is on.
+
+  call getpixelloc
+  and (hl)
+  ret

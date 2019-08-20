@@ -1,0 +1,7 @@
+pixelToggle:
+;(B,C) is (x,y)
+
+  call getpixelloc
+  xor (hl)
+  ld (hl),a
+  ret

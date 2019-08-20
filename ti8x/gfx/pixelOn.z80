@@ -1,0 +1,7 @@
+pixelOn:
+;(B,C) is (x,y)
+
+  call getpixelloc
+  or (hl)
+  ld (hl),a
+  ret
