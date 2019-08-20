@@ -1,4 +1,9 @@
-;WikiGuru, optimized by DarkerLine
+;NOTE: This routine may be under a different License.
+;posted in this topic: https://www.cemetech.net/projects/uti/viewtopic.php?t=1279&postdays=0&postorder=asc&start=0
+;with the rule:
+;     "3) By posting a routine you're granting everyone the right to use it freely."
+
+;WikiGuru, optimized by DarkerLine, then Zeda
 ;input: hl points to string (optional argument: b to set type speed)
 ;output: string displayed at set location (must set penrow and pencol before calling)
 ;destroyed: all but c
@@ -13,7 +18,5 @@ type:
 pause:
   halt
   djnz pause
-  di
   bcall(_VPutMap)
   jr type
-  ret

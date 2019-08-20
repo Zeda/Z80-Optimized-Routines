@@ -1,3 +1,8 @@
+;NOTE: This routine may be under a different License.
+;posted in this topic: https://www.cemetech.net/projects/uti/viewtopic.php?t=1279&postdays=0&postorder=asc&start=0
+;with the rule:
+;     "3) By posting a routine you're granting everyone the right to use it freely."
+
 ;created by WikiGuru
 ;input:hl points to string
 ;output: string displayed centered on screen

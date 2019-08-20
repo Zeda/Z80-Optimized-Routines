@@ -1,4 +1,7 @@
-;Wriiten by John Metcalf
+;NOTE: This routine may be under a different License.
+
+;Written by John Metcalf
+;   http://www.retroprogramming.com/2017/07/xorshift-pseudorandom-numbers-in-z80.html
 
 ;Note: uses SMC
 

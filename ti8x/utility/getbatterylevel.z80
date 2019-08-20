@@ -1,3 +1,5 @@
+;NOTE: This routine may be under a different License.
+
 ;created by KermMartian, based off code by SirCmpwn (Drew DeVault)
 ;Optimized by Zeda
 ;Gets an accurate battery level on non-TI-83+ devices.

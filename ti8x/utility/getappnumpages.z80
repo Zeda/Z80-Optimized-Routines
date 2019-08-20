@@ -1,3 +1,6 @@
+;NOTE: This routine may be under a different License.
+;Code is at https://www.omnimaga.org/asm-language/asm-optimized-routines/msg310060/#msg310060
+
 ;Routine by Runer112, based on a routine by Zeda
 ;Neither routine properly parses the app header, so technically it is
 ;feasible that this won't work, but an app would almost have to be

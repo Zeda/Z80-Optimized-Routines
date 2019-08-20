@@ -1,3 +1,5 @@
+;NOTE: This routine may be under a different License.
+
 ; This routine is a fast Pseudo Random Number Generator
 ;for the Z80. It combines a 16-bit LCG and 16-bit xorshift.
 ;The xorshift routine was written by John Metcalf
