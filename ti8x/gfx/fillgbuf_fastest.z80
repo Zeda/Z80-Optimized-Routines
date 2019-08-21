@@ -1,0 +1,98 @@
+clrgbuf:
+;Input: HL points to the gbuf
+  xor a
+
+fillgbuf:
+;Input: HL points to the gbuf, A is the byte to fill with.
+;NOTE: Disables interrupts!
+;NOTE: Uses Self Modifying Code
+;4294cc
+;399 bytes
+
+;Disable interrupts
+  di
+
+;preserve stack pointer
+  ld (fillgbuf_spsave+1),sp
+
+;add 768 to HL
+  inc h
+  inc h
+  inc h
+
+;Load HL into SP
+  ld sp,hl    ;6cc
+
+;load A into H and L
+  ld h,a
+  ld l,a
+
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+  push hl \ push hl \ push hl \ push hl \ push hl \ push hl
+
+
+fillgbuf_spsave:
+  ld sp,0
+  ret

@@ -1,0 +1,12 @@
+clrgbuf:
+;Input: HL points to the gbuf
+  xor a
+fillgbuf:
+;Input: HL points to the gbuf, A is the byte to fill with.
+  ld bc,767
+  ld (hl),a
+  ld d,h
+  ld e,l
+  inc de
+  ldir
+  ret
