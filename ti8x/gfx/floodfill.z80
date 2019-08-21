@@ -3,211 +3,196 @@ Flood:
 ;     HL points to the buffer (cannot be at saveSScreen)
 ;     BC=(x,y)
 ;Needs these RAM addresses:
-;     TempWord1
-;     TempWord2
-;     TempWord3
+;     2 bytes : gbufptr
+;     2 bytes : floodfill_coord
+;     2 bytes : floodfill_pixptr
 
-     ld hl,(TempWord1)
-     push bc
-     ld de,saveSScreen
-     xor a
-     ld bc,768
-       ld (de),a
-       inc de
-       dec c
-       jr nz,$-3
-       dec b
-       jr nz,$-6
-     pop bc
-     push bc
-     call GetPixelLoc
-     pop bc
-     ret nc
-     ld de,(TempWord1)
-     add hl,de
-     and (hl)
-     ret nz
+  ld (gbufptr),hl
+  push bc
+  ld de,saveSScreen
+  xor a
+  ld bc,3
+floodfill_clrbackup:
+  ld (de),a
+  inc de
+  djnz,floodfill_clrbackup
+  dec c
+  jr nz,floodfill_clrbackup
+
+  pop bc
+  push bc
+  call GetPixelLoc
+  pop bc
+  ret nc
+  ld de,(gbufptr)
+  add hl,de
+  and (hl)
+  ret nz
 FloodFill:
-     ld de,1   ;Direction
+  ld de,1   ;Direction
 ;DE is the direction (x,y)
 ;BC is the current coordinates
 FloodFillLoop:
-     push bc
-     call GetPixelLoc
-     jr nc,ChangeDirection
-     push hl
-     push af
-     ld bc,(TempWord1)
-     add hl,bc
-     and (hl)
-     ld (TempWord3),hl
-     pop hl
-     ld a,h
-     pop hl
-     jr nz,ChangeDirection
+  push bc
+  call GetPixelLoc
+  jr nc,ChangeDirection
+  push hl
+  push af
+  ld bc,(gbufptr)
+  add hl,bc
+  and (hl)
+  ld (floodfill_pixptr),hl
+  pop hl
+  ld a,h
+  pop hl
+  jr nz,ChangeDirection
 
-     ld bc,saveSScreen
-     add hl,bc
-     ld b,a
-     or (hl)
-     ld (hl),a
-     ld a,b
+  ld bc,saveSScreen
+  add hl,bc
+  ld b,a
+  or (hl)
+  ld (hl),a
+  ld a,b
 
-
-
-;     ld bc,saveSScreen
-;     add hl,bc
-;     or (hl)
-;     ld (hl),a
-
-;     pop hl
-;     ld bc,(TempWord1)
-;     add hl,bc
-;     pop af
-;     ld b,a
-;     and (hl)
-;     ld a,b
-;     jr nz,ChangeDirection
-
-     ld hl,(TempWord3)
-     pop bc
-     ld (TempWord2),bc
-     or (hl)
-     ld (hl),a
+  ld hl,(floodfill_pixptr)
+  pop bc
+  ld (floodfill_coord),bc
+  or (hl)
+  ld (hl),a
 FloodFillLoop0:
-     ld a,d
-     add a,b
-     ld b,a
-     ld a,e
-     add a,c
-     ld c,a
-     jp FloodFillLoop
+  ld a,d
+  add a,b
+  ld b,a
+  ld a,e
+  add a,c
+  ld c,a
+  jp FloodFillLoop
 ChangeDirection:
-     pop bc
-     ld bc,(TempWord2)
-     ld a,d
-     or a
-     jr nz,UpDown
-       call CheckLeftRight
-       jp z,FloodFillLoop0
-       jr NextPath
+  pop bc
+  ld bc,(floodfill_coord)
+  ld a,d
+  or a
+  jr nz,UpDown
+  call CheckLeftRight
+  jp z,FloodFillLoop0
+  jr NextPath
 UpDown:
-     call CheckUpDown
-     jp z,FloodFillLoop0
+  call CheckUpDown
+  jp z,FloodFillLoop0
 NextPath:
-     ld hl,saveSScreen
-     xor a
-     ld d,a
-     ld e,a
-     ld c,64
-     ld b,12
+  ld hl,saveSScreen
+  xor a
+  ld d,a
+  ld e,a
+  ld c,64
+  ld b,12
 PathFind:
-       cp (hl)
-       jr z,$+15
-         push bc
-         push de
-         push hl
-         ld a,(hl)
-         call PathFound
-         pop hl
-         jr z,PathSelected
-         xor a
-         pop de
-         pop bc
-       inc hl
-       inc d
-       djnz PathFind
-       ld d,0
-       inc e
-       dec c
-       jr nz,PathFind-2
-     jp BufferToLCD
+  cp (hl)
+  jr z,$+15
+  push bc
+  push de
+  push hl
+  ld a,(hl)
+  call PathFound
+  pop hl
+  jr z,PathSelected
+  xor a
+  pop de
+  pop bc
+  inc hl
+  inc d
+  djnz PathFind
+  ld d,0
+  inc e
+  dec c
+  jr nz,PathFind-2
+  jp BufferToLCD
 PathSelected:
-     pop hl
-     pop hl
-     jp FloodFillLoop0
+  pop hl
+  pop hl
+  jp FloodFillLoop0
 PathFound:
-     ld c,e
-     ld b,d
-     sla b
-     sla b
-     sla b
-     dec b
-     ld a,(hl)
+  ld c,e
+  ld b,d
+  sla b
+  sla b
+  sla b
+  dec b
+  ld a,(hl)
 FindXVal:
-       inc b
-       add a,a
-       jr nc,$-2
-     ld (TempWord2),a
-     ld (TempWord3),bc
+  inc b
+  add a,a
+  jr nc,$-2
+  ld (floodfill_coord),a
+  ld (floodfill_pixptr),bc
 ;Now BC has the adjusted coordinates
-     call CheckLeftRight
-     ret z
-     call CheckUpDown
-     ret z
-     call GetPixelLoc
-     ld bc,saveSScreen
-     add hl,bc
-     cpl
-     and (hl)
-     ld (hl),a
-     ld a,(TempWord2)
-     ld bc,(TempWord3)
-     or a
-     jr nz,FindXVal
-     inc a
-     ret
+  call CheckLeftRight
+  ret z
+  call CheckUpDown
+  ret z
+  call GetPixelLoc
+  ld bc,saveSScreen
+  add hl,bc
+  cpl
+  and (hl)
+  ld (hl),a
+  ld a,(floodfill_coord)
+  ld bc,(floodfill_pixptr)
+  or a
+  jr nz,FindXVal
+  inc a
+  ret
 CheckLeftRight:
-     ld de,$FF00
-     push bc
-     dec b
-     call GetPixelLoc
-     jr nc,$+11
-       ld bc,(TempWord1)
-       add hl,bc
-       and (hl)
-       jr nz,$+4
-       pop bc
-       ret z
-     pop bc
-     ld d,1
-     push bc
-     inc b
-     call GetPixelLoc
-     jr nc,$+11
-       ld bc,(TempWord1)
-       add hl,bc
-       and (hl)
-       jr nz,$+4
-       pop bc
-       ret z
-     inc b
-     pop bc
-     ret
+  ld de,$FF00
+  push bc
+  dec b
+  call GetPixelLoc
+  jr nc,$+11
+  ld bc,(gbufptr)
+  add hl,bc
+  and (hl)
+  jr nz,$+4
+  pop bc
+  ret z
+  pop bc
+  ld d,1
+  push bc
+  inc b
+  call GetPixelLoc
+  jr nc,$+11
+  ld bc,(gbufptr)
+  add hl,bc
+  and (hl)
+  jr nz,$+4
+  pop bc
+  ret z
+  inc b
+  pop bc
+  ret
 CheckUpDown:
-     ld de,$00FF
-     push bc
-     dec c
-     call GetPixelLoc
-     jr nc,$+11
-       ld bc,(TempWord1)
-       add hl,bc
-       and (hl)
-       jr nz,$+4
-       pop bc
-       ret z
-     pop bc
-     ld e,1
-     push bc
-     inc c
-     call GetPixelLoc
-     jr nc,$+11
-       ld bc,(TempWord1)
-       add hl,bc
-       and (hl)
-       jr nz,$+4
-       pop bc
-       ret z
-     inc c
-     pop bc
-     ret
+  ld de,$00FF
+  push bc
+  dec c
+  call GetPixelLoc
+  jr nc,$+11
+  ld bc,(gbufptr)
+  add hl,bc
+  and (hl)
+  jr nz,$+4
+  pop bc
+  ret z
+  pop bc
+  ld e,1
+  push bc
+  inc c
+  call GetPixelLoc
+  jr nc,$+11
+  ld bc,(gbufptr)
+  add hl,bc
+  and (hl)
+  jr nz,$+4
+  pop bc
+  ret z
+  inc c
+  pop bc
+  ret
