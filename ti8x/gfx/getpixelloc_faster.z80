@@ -1,0 +1,41 @@
+getpixelloc:
+;Input: (B,C) is (X,Y)
+;Output: A is the mask, HL is the byte the pixel is on, nc if out-of-bounds, B=0
+;Destroys: C
+
+;Check bounds
+  ld a,c
+  cp 64
+  ret nc
+  ld a,b
+  cp 96
+  ret nc
+
+  ld b,0
+  ld h,b
+  ld l,c
+  add hl,hl
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  ld c,a
+  srl c
+  srl c
+  srl c
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+
+  and 7
+  ld bc,pixLUT
+  add a,c
+  ld c,a
+#if (pixLUT&255)>248
+  jr nc,$+3
+  inc b
+#endif
+  ld a,(bc)
+  ret
+
+pixLUT:
+  .db $80,$40,$20,$10,$08,$04,$02,$01
