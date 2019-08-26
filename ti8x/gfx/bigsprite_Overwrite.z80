@@ -1,0 +1,76 @@
+#include "ti8x/gfx/bigsprite_subroutine.z80"
+bigsprite_Overwrite:
+;Inputs:
+;     B is the X-coordinate
+;     C is the Y-Coordinate
+;     DE points to the sprite
+;     H is the height
+;     L is the width
+;86 bytes
+
+;Set up the clipping
+  call bigsprite_subroutine
+  ret nc
+
+bigsprite_Overwrite_loop:
+  push bc   ;height,width
+  push de   ;sprite data pointer
+  push hl
+
+
+spriteloop_Overwrite:
+  push bc
+  push de
+  ld a,(de)
+  ld d,a
+  ld e,0
+  ld a,(sprite_x)
+  ld c,a
+  and 7
+  jr z,+_
+  ld b,a
+  ld a,e
+  srl d \ rra \ djnz $-3
+  ld e,a
+_:
+  ld a,c
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask0)
+  and (hl)
+  or d
+  ld (hl),a
+  ld a,c
+_:
+  inc hl
+  add a,8
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask1)
+  and (hl)
+  or e
+  ld (hl),a
+_:
+  ld de,11
+  add hl,de
+  ex (sp),hl
+  ld a,(sprite_width)
+  ld e,a
+  add hl,de
+  pop de
+  ex de,hl
+  pop bc
+  djnz spriteloop_Overwrite
+
+
+  pop hl
+  inc hl
+  ld a,(sprite_x)
+  add a,8
+  ld (sprite_x),a
+  pop de
+  inc de
+  pop bc
+  dec c
+  jr nz,bigsprite_Overwrite_loop
+  ret

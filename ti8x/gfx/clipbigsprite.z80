@@ -1,4 +1,5 @@
 ;NOTE: This routine may be under a different License.
+;See the other "bigsprite" routines for explicitly free implementations.
 
 ;--------------------------------
 ;Clip Big Sprite
@@ -9,6 +10,7 @@
 ;c  - width in bytes
 ;d  - x
 ;e  - y
+;303 bytes
 ClipBigSprite:
 ; Early out, Check if its even remotely on screen
    ld a,e

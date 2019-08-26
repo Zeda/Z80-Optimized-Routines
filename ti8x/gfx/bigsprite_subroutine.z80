@@ -1,0 +1,120 @@
+#ifndef included_bigsprite_subroutine
+#define included_bigsprite_subroutine
+
+;This is made by Zeda, feel free to use it for whatever.
+;Takes inputs for a big sprite and sets up masks and clipping
+;requires 4 bytes of temporary RAM, but doesn't use SMC
+
+
+spritetmp = 8000h
+sprite_width  = spritetmp+0
+sprite_x      = spritetmp+1
+sprite_mask0  = spritetmp+2
+sprite_mask1  = spritetmp+3
+
+bigsprite_subroutine:
+;Inputs:
+;     B is the X-coordinate
+;     C is the Y-Coordinate
+;     DE points to the sprite
+;     H is the height
+;     L is the width
+;Outputs:
+;   carry flag is set if okay to draw, nc if out-of-bounds.
+;   B is height.
+;   C is width.
+;   HL points to the byte to start drawing at.
+;   DE points to where to start sourcing the sprite data
+;   (sprite_width) is the width of the sprite in bytes
+;   (sprite_x) is the intitial x coordinate to begin drawing at
+;   (sprite_mask0) is the left mask
+;   (sprite_mask1) is the right mask
+;92 bytes
+
+;First check if the sprite is on-screen in the horizontal direction
+  ld a,c
+  cp 64
+  jr c,+_
+  add a,h
+  ret nc
+  ld h,a
+  push hl
+  xor a
+  ld h,a
+  sub c
+  ex de,hl
+  add hl,de
+  dec a
+  jr nz,$-2
+  ex de,hl
+  pop hl
+  xor a
+  ld c,a
+_:
+;Next check h+c<=64
+  ld a,64
+  sub c
+  cp h
+  jr nc,+_
+  ld h,a
+_:
+
+;Make sure the height is not now 0
+  ld a,h
+  or a
+  ret z
+
+;Save the width and height of the sprite
+  push hl               ;height,width
+  ld h,b
+  ld (sprite_width),hl  ;x,width
+  push de               ;sprite pointer
+
+  ld a,b
+  and 7
+  ld de,spritemask
+  add a,e
+  ld e,a
+#if spritemask&255>248
+  jr nc,$+3
+  inc d
+#endif
+  ld a,(de)
+  ld (sprite_mask0),a
+  cpl
+  ld (sprite_mask1),a
+;
+;
+  ld a,c
+  add a,a
+  sbc a,a
+  ld h,a
+  ld a,b
+  ld b,h
+  ld l,c
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  add hl,hl
+  ld c,a
+  add a,a
+  sbc a,a
+  ld b,a
+  ld a,c
+  sra c
+  sra c
+  sra c
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+
+  pop de
+  pop bc
+  ;B is height
+  ;C is width
+  scf
+  ret
+
+spritemask:
+  .db $00,$80,$C0,$E0,$F0,$F8,$FC,$FE
+#endif

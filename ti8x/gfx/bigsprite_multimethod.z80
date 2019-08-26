@@ -1,0 +1,357 @@
+;This is made by Zeda, feel free to use it for whatever.
+;Allows for big sprites, clips accordingly.
+;5 drawing methods
+;requires 5 bytes of temporary RAM, but doesn't use SMC
+
+
+;spritetmp = 8000h
+sprite_width  = spritetmp+0
+sprite_x      = spritetmp+1
+sprite_mask0  = spritetmp+2
+sprite_mask1  = spritetmp+3
+sprite_method = spritetmp+4
+
+bigsprite:
+;Inputs:
+;     A is the method:
+;        0=Overwrite
+;        1=AND
+;        2=XOR
+;        3=OR
+;        5=Erase
+;     B is the X-coordinate
+;     C is the Y-Coordinate
+;     DE points to the sprite
+;     H is the height
+;     L is the width
+;433 bytes
+
+  ld (sprite_method),a
+;First check if the sprite is on-screen in the horizontal direction
+  ld a,c
+  cp 64
+  jr c,+_
+  add a,h
+  ret nc
+  ld h,a
+  push hl
+  xor a
+  ld h,a
+  sub c
+  ex de,hl
+  add hl,de
+  dec a
+  jr nz,$-2
+  ex de,hl
+  pop hl
+  xor a
+  ld c,a
+_:
+;Next check h+c<=64
+  ld a,64
+  sub c
+  cp h
+  jr nc,+_
+  ld h,a
+_:
+
+;Make sure the height is not now 0
+  ld a,h
+  or a
+  ret z
+
+;Save the width and height of the sprite
+  push hl               ;height,width
+  ld h,b
+  ld (sprite_width),hl  ;x,width
+  push de               ;sprite pointer
+
+  ld a,b
+  and 7
+  ld de,spritemask
+  add a,e
+  ld e,a
+#if spritemask&255>248
+  jr nc,$+3
+  inc d
+#endif
+  ld a,(de)
+  ld (sprite_mask0),a
+  cpl
+  ld (sprite_mask1),a
+;
+;
+  ld a,c
+  add a,a
+  sbc a,a
+  ld h,a
+  ld a,b
+  ld b,h
+  ld l,c
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  add hl,hl
+  ld c,a
+  add a,a
+  sbc a,a
+  ld b,a
+  ld a,c
+  sra c
+  sra c
+  sra c
+  add hl,bc
+  ld bc,plotSScreen
+  add hl,bc
+
+  pop de
+  pop bc
+  ;B is height
+  ;C is width
+
+
+_:
+  push bc   ;height,width
+  push de   ;sprite data pointer
+  push hl
+  call spritemethod
+  pop hl
+  inc hl
+  ld a,(sprite_x)
+  add a,8
+  ld (sprite_x),a
+  pop de
+  inc de
+  pop bc
+  dec c
+  jr nz,-_
+  ret
+
+
+spritemethod:
+  ld a,(sprite_method)
+  dec a
+  jp z,spriteloop_AND
+  dec a
+  jp z,spriteloop_XOR
+  dec a
+  jp z,spriteloop_OR
+  sub 2
+  jp z,spriteloop_Erase
+
+spriteloop_Overwrite:
+  push bc
+  push de
+  ld a,(de)
+  ld d,a
+  ld e,0
+  ld a,(sprite_x)
+  ld c,a
+  and 7
+  jr z,+_
+  ld b,a
+  ld a,e
+  srl d \ rra \ djnz $-3
+  ld e,a
+_:
+  ld a,c
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask0)
+  and (hl)
+  or d
+  ld (hl),a
+  ld a,c
+_:
+  inc hl
+  add a,8
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask1)
+  and (hl)
+  or e
+  ld (hl),a
+_:
+  ld de,11
+  add hl,de
+  ex (sp),hl
+  ld a,(sprite_width)
+  ld e,a
+  add hl,de
+  pop de
+  ex de,hl
+  pop bc
+  djnz spriteloop_Overwrite
+  ret
+spriteloop_OR:
+  push bc
+  push de
+  ld a,(de)
+  ld d,a
+  ld e,0
+  ld a,(sprite_x)
+  ld c,a
+  and 7
+  jr z,+_
+  ld b,a
+  ld a,e
+  srl d \ rra \ djnz $-3
+  ld e,a
+_:
+  ld a,c
+  cp 96
+  jr nc,+_
+  ld a,(hl)
+  or d
+  ld (hl),a
+  ld a,c
+_:
+  inc hl
+  add a,8
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask1)
+  ld a,(hl)
+  or e
+  ld (hl),a
+_:
+  ld de,11
+  add hl,de
+  ex (sp),hl
+  ld a,(sprite_width)
+  ld e,a
+  add hl,de
+  pop de
+  ex de,hl
+  pop bc
+  djnz spriteloop_OR
+  ret
+spriteloop_XOR:
+  push bc
+  push de
+  ld a,(de)
+  ld d,a
+  ld e,0
+  ld a,(sprite_x)
+  ld c,a
+  and 7
+  jr z,+_
+  ld b,a
+  ld a,e
+  srl d \ rra \ djnz $-3
+  ld e,a
+_:
+  ld a,c
+  cp 96
+  jr nc,+_
+  ld a,(hl)
+  xor d
+  ld (hl),a
+  ld a,c
+_:
+  inc hl
+  add a,8
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask1)
+  ld a,(hl)
+  xor e
+  ld (hl),a
+_:
+  ld de,11
+  add hl,de
+  ex (sp),hl
+  ld a,(sprite_width)
+  ld e,a
+  add hl,de
+  pop de
+  ex de,hl
+  pop bc
+  djnz spriteloop_XOR
+  ret
+spriteloop_AND:
+  push bc
+  push de
+  ld a,(de)
+  ld d,a
+  ld e,-1
+  ld a,(sprite_x)
+  ld c,a
+  and 7
+  jr z,+_
+  ld b,a
+  ld a,e
+  scf
+  rr d \ rra \ djnz $-3
+  ld e,a
+_:
+  ld a,c
+  cp 96
+  jr nc,+_
+  ld a,(hl)
+  and d
+  ld (hl),a
+  ld a,c
+_:
+  inc hl
+  add a,8
+  cp 96
+  jr nc,+_
+  ld a,(sprite_mask1)
+  ld a,(hl)
+  and e
+  ld (hl),a
+_:
+  ld de,11
+  add hl,de
+  pop de
+  inc de
+  pop bc
+  djnz spriteloop_AND
+  ret
+spriteloop_Erase:
+  push bc
+  push de
+  ld a,(de)
+  cpl
+  ld d,a
+  ld e,-1
+  ld a,(sprite_x)
+  ld c,a
+  and 7
+  jr z,+_
+  ld b,a
+  ld a,e
+  scf
+  rr d \ rra \ djnz $-3
+  ld e,a
+_:
+  ld a,c
+  cp 96
+  jr nc,+_
+  ld a,(hl)
+  and d
+  ld (hl),a
+  ld a,c
+_:
+  inc hl
+  add a,8
+  cp 96
+  jr nc,+_
+  ld a,(hl)
+  and e
+  ld (hl),a
+_:
+  ld de,11
+  add hl,de
+  ex (sp),hl
+  ld a,(sprite_width)
+  ld e,a
+  add hl,de
+  pop de
+  ex de,hl
+  pop bc
+  djnz spriteloop_Erase
+  ret
+spritemask:
+  .db $00,$80,$C0,$E0,$F0,$F8,$FC,$FE
