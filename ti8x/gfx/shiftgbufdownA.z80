@@ -50,4 +50,3 @@ shiftgbufdown_A:
   dec bc
   lddr
   ret
-.echo $-shiftgbufdown_A

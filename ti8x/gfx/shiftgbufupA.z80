@@ -50,4 +50,3 @@ shiftgbufup_A:
   dec bc
   ldir
   ret
-.echo $-shiftgbufup_A
