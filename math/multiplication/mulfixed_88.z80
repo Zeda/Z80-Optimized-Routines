@@ -25,9 +25,9 @@ _:
   ld d,a
 _:
 
-; Now we need to put DE in BC to use mul16
-  ld b,d
-  ld c,e
+; Now we need to put HL in BC to use mul16
+  ld b,h
+  ld c,l
   call mul16
 
 ;Get the middle two bytes, EH, and put them in HL
