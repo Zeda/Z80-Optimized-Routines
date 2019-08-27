@@ -1,0 +1,86 @@
+;Masked Sprite routine
+putsprite_masked:
+;Inputs:
+;   (A,L) = (x,y)
+;   B is height
+;   IX points to the sprite data
+;       first byte is the data
+;       second byte is mask
+;       continues, alternating like this.
+;
+;Outputs:
+;   Mask is ORed to the buffer, then data is XORed on top of that.
+;
+;Destroys:
+;   AF, BC, DE, HL, IX
+;
+;Notes:
+;   To set a pixel...
+;     black: mask is 1, data is 0
+;     white: mask is 1, data is 1
+;     clear: mask is 0, data is 0 (keeps the data from the buffer)
+;     invert: mask is 0, data is 1 (inverts the data from the buffer)
+;
+;This routine is free to use :)
+;63 bytes (or 64 bytes if gbuf is not located at 0x**40
+
+  ld e,l
+  ld h,0
+  ld d,h
+  add hl,hl
+  add hl,de
+  add hl,hl
+  add hl,hl
+  ld e,a
+  and 7
+  ld c,a
+  xor e  ;essentially gets E with the bottom 3 bits reset
+#if (plotSScreen&255) = 64
+  inc a
+  rra
+  rra
+  rra
+  ld e,a
+  ld d,plotSScreen>>8
+#else
+  rra
+  rra
+  rra
+  ld e,a
+  add hl,de
+  ld de,plotSScreen
+#endif
+  add hl,de
+
+putsprite_masked_loop:
+  push bc
+  xor a
+  ld d,(ix)
+  ld e,a
+  or c
+  ld b,c
+  ld c,e
+  inc ix
+  ld a,(ix)
+  jr z,putsprite_masked_rotdone
+putsprite_masked_rot:
+  rra
+  rr c
+  srl d
+  rr e
+  djnz putsprite_masked_rot
+putsprite_masked_rotdone:
+  or (hl)
+  xor d
+  ld (hl),a
+  inc hl
+  ld a,(hl)
+  or c
+  xor e
+  ld (hl),a
+  ld c,11
+  add hl,bc
+  inc ix
+  pop bc
+  djnz putsprite_masked_loop
+  ret
