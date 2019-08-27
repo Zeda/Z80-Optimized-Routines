@@ -5,7 +5,7 @@
 iPutSpriteMask:
 ;Inputs:
 ;   ix = b-byte mask
-;   ix+b = b-byte sprite
+;   ix+8 = b-byte sprite
 ;   a,l = x and y as with IonPutSprite
 ;   b= height of sprite
 ;Outputs:
