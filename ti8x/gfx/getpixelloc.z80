@@ -15,8 +15,8 @@ GetPixelloc:
   ld h,b
   ld l,c
   add hl,hl
-  add hl,hl
   add hl,bc
+  add hl,hl
   add hl,hl
   ld c,a
   srl c
