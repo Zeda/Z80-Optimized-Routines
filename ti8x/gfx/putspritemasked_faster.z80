@@ -1,7 +1,7 @@
 ;NOTE: This routine may be under a different License.
 
 ;Masked Sprite routine
-;This is a routine by Fallen Ghost, as a response to Kerm's routine.
+;This is optimized by Zeda from a routine by Fallen Ghost, as a response to Kerm's routine.
 ;NOTE: Uses shadow registers!
 
 PutMask:
@@ -20,66 +20,75 @@ PutMask:
 ;
 ;Improvements from Kerm's DCS version:
 ;   -Permits any height sprite
-;   -4 bytes less
+;   -8 bytes less
 ;   -Faster
-   ld   e,l
-   ld   h,000h
-   ld   d,h
-   add   hl,de
-   add   hl,de
-   add   hl,hl
-   add   hl,hl
-   ld   e,a
-   and   007h
-   ld   c,a
-   srl   e
-   srl   e
-   srl   e
-   add   hl,de
-   ld   de,plotSScreen
-   add   hl,de
+  ld e,l
+  ld h,0
+  ld d,h
+  add hl,hl
+  add hl,de
+  add hl,hl
+  add hl,hl
+  ld e,a
+  and 7
+  ld c,a
+  xor e  ;essentially gets E with the bottom 3 bits reset
+#if (plotSScreen&255) = 64
+  inc a
+  rra
+  rra
+  rra
+  ld e,a
+  ld d,plotSScreen>>8
+#else
+  rra
+  rra
+  rra
+  ld e,a
+  add hl,de
+  ld de,plotSScreen
+#endif
+  add hl,de
+
    ld a,b
    exx
-   ld d,0
-   ld e,a
-   push IX
-   pop HL
-   add hl,de
-   ex de,hl
+   add a,ixl
+   ld l,a
+   ld a,ixh
+   adc a,0
+   ld h,a
    exx
 putMaskLoop1:
+  exx
+  ld      d,0FFh
+  ld      e,(hl)
+  inc hl
+  exx
+  xor a
    ld   d,(ix)
-   ld   e,00h
-   exx
-   ld      h,0FFh
-   ld      a,(de)
-   ld      l,a
-   inc de
-   exx
-   ld   a,c
-   or   a
+   ld   e,a
+   sub c
    jr   z,putMaskSkip1
 putMaskLoop2:
+  exx
+  rr e
+  rr d
+  exx
    srl   d
    rr   e
-   exx
-   SCF
-   rr l
-   rr h
-   exx
-   dec   a
+   sub -1
    jr   nz,putMaskLoop2
 putMaskSkip1:
    ld   a,(hl)
    exx
-   and l
+   and e
    exx
    or   d
    ld   (hl),a
    inc   hl
    ld   a,(hl)
    exx
-   and     h
+   and     d
    exx
    or   e
    ld   (hl),a
