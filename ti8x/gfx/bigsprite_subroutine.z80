@@ -70,6 +70,21 @@ _:
   ld (sprite_width),hl  ;x,width
   push de               ;sprite pointer
 
+;Set up a pointer to the routine for shifting the  routine for shifting the sprite data
+  ld ixh,rshiftHA_7>>8
+  ld a,h
+  cpl
+  and 7
+  ld l,a
+  add a,a
+  add a,l
+  add a,rshiftHA_7&255
+  ld ixl,a
+#if (rshiftHA_7&255)>234
+  jr nc,$+4
+  inc ixh
+#endif
+
   ld a,b
   and 7
   ld de,spritemask
@@ -112,9 +127,24 @@ _:
   pop bc
   ;B is height
   ;C is width
+  ex de,hl
   scf
+  ret
+
+rshiftHA_7:
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  ex de,hl
+  ld e,a
   ret
 
 spritemask:
   .db $00,$80,$C0,$E0,$F0,$F8,$FC,$FE
+call_ix:
+  jp (ix)
 #endif

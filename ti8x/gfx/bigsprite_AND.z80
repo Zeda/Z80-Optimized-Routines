@@ -14,26 +14,19 @@ bigsprite_AND:
 
 bigsprite_AND_loop:
   push bc   ;height,width
-  push de   ;sprite data pointer
-  push hl
-
+  push de   ;gbuf ptr
+  push hl   ;sprite data pointer
+  ld a,(sprite_x)
+  ld c,a
+  add a,8
+  ld (sprite_x),a
 
 spriteloop_AND:
   push bc
-  push de
-  ld a,(de)
-  ld d,a
-  ld e,-1
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  scf
-  rr d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  scf \ sbc a,a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
@@ -51,19 +44,19 @@ _:
   and e
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  pop de
-  inc de
+  ld bc,11
+  add hl,bc
+  ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_AND
 
 
   pop hl
   inc hl
-  ld a,(sprite_x)
-  add a,8
-  ld (sprite_x),a
   pop de
   inc de
   pop bc

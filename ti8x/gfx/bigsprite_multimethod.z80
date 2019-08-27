@@ -10,8 +10,7 @@ sprite_x      = spritetmp+1
 sprite_mask0  = spritetmp+2
 sprite_mask1  = spritetmp+3
 sprite_method = spritetmp+4
-
-bigsprite:
+sprite:
 ;Inputs:
 ;     A is the method:
 ;        0=Overwrite
@@ -24,8 +23,7 @@ bigsprite:
 ;     DE points to the sprite
 ;     H is the height
 ;     L is the width
-;433 bytes
-
+;401 bytes
   ld (sprite_method),a
 ;First check if the sprite is on-screen in the horizontal direction
   ld a,c
@@ -65,6 +63,23 @@ _:
   ld h,b
   ld (sprite_width),hl  ;x,width
   push de               ;sprite pointer
+
+;Set up a pointer to the routine for shifting the  routine for shifting the sprite data
+  ld ixh,rshiftHA_7>>8
+  ld a,h
+  cpl
+  and 7
+  ld l,a
+  add a,a
+  add a,l
+  add a,rshiftHA_7&255
+  ld ixl,a
+#if (rshiftHA_7&255)>234
+  jr nc,$+4
+  inc ixh
+#endif
+
+
 
   ld a,b
   and 7
@@ -108,18 +123,19 @@ _:
   pop bc
   ;B is height
   ;C is width
-
+  ex de,hl
 
 _:
   push bc   ;height,width
-  push de   ;sprite data pointer
-  push hl
+  push de   ;gbuf ptr
+  push hl   ;sprite data pointer
+  ld a,(sprite_x)
+  ld c,a
+  add a,8
+  ld (sprite_x),a
   call spritemethod
   pop hl
   inc hl
-  ld a,(sprite_x)
-  add a,8
-  ld (sprite_x),a
   pop de
   inc de
   pop bc
@@ -139,21 +155,13 @@ spritemethod:
   sub 2
   jp z,spriteloop_Erase
 
+
 spriteloop_Overwrite:
   push bc
-  push de
-  ld a,(de)
-  ld d,a
-  ld e,0
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  srl d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  xor a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
@@ -172,32 +180,22 @@ _:
   or e
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  ex (sp),hl
-  ld a,(sprite_width)
-  ld e,a
-  add hl,de
-  pop de
+  ld bc,11
+  add hl,bc
   ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_Overwrite
   ret
 spriteloop_OR:
   push bc
-  push de
-  ld a,(de)
-  ld d,a
-  ld e,0
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  srl d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  xor a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
@@ -215,32 +213,22 @@ _:
   or e
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  ex (sp),hl
-  ld a,(sprite_width)
-  ld e,a
-  add hl,de
-  pop de
+  ld bc,11
+  add hl,bc
   ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_OR
   ret
 spriteloop_XOR:
   push bc
-  push de
-  ld a,(de)
-  ld d,a
-  ld e,0
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  srl d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  xor a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
@@ -258,33 +246,22 @@ _:
   xor e
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  ex (sp),hl
-  ld a,(sprite_width)
-  ld e,a
-  add hl,de
-  pop de
+  ld bc,11
+  add hl,bc
   ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_XOR
   ret
 spriteloop_AND:
   push bc
-  push de
-  ld a,(de)
-  ld d,a
-  ld e,-1
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  scf
-  rr d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  scf \ sbc a,a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
@@ -302,35 +279,28 @@ _:
   and e
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  pop de
-  inc de
+  ld bc,11
+  add hl,bc
+  ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_AND
   ret
 spriteloop_Erase:
   push bc
-  push de
-  ld a,(de)
-  cpl
-  ld d,a
-  ld e,-1
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  scf
-  rr d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  xor a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
-  ld a,(hl)
-  and d
+  ld a,d
+  cpl
+  and (hl)
   ld (hl),a
   ld a,c
 _:
@@ -338,20 +308,34 @@ _:
   add a,8
   cp 96
   jr nc,+_
-  ld a,(hl)
-  and e
+  ld a,e
+  cpl
+  and (hl)
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  ex (sp),hl
-  ld a,(sprite_width)
-  ld e,a
-  add hl,de
-  pop de
+  ld bc,11
+  add hl,bc
   ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_Erase
   ret
+
+rshiftHA_7:
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  ex de,hl
+  ld e,a
+  ret
 spritemask:
   .db $00,$80,$C0,$E0,$F0,$F8,$FC,$FE
+call_ix:
+  jp (ix)

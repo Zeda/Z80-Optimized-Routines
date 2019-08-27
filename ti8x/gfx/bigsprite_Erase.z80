@@ -14,32 +14,25 @@ bigsprite_Erase:
 
 bigsprite_Erase_loop:
   push bc   ;height,width
-  push de   ;sprite data pointer
-  push hl
-
+  push de   ;gbuf ptr
+  push hl   ;sprite data pointer
+  ld a,(sprite_x)
+  ld c,a
+  add a,8
+  ld (sprite_x),a
 
 spriteloop_Erase:
   push bc
-  push de
-  ld a,(de)
-  cpl
-  ld d,a
-  ld e,-1
-  ld a,(sprite_x)
-  ld c,a
-  and 7
-  jr z,+_
-  ld b,a
-  ld a,e
-  scf
-  rr d \ rra \ djnz $-3
-  ld e,a
-_:
+  push hl
+  ld h,(hl)
+  xor a
+  call call_ix
   ld a,c
   cp 96
   jr nc,+_
-  ld a,(hl)
-  and d
+  ld a,d
+  cpl
+  and (hl)
   ld (hl),a
   ld a,c
 _:
@@ -47,27 +40,23 @@ _:
   add a,8
   cp 96
   jr nc,+_
-  ld a,(hl)
-  and e
+  ld a,e
+  cpl
+  and (hl)
   ld (hl),a
 _:
-  ld de,11
-  add hl,de
-  ex (sp),hl
-  ld a,(sprite_width)
-  ld e,a
-  add hl,de
-  pop de
+  ld bc,11
+  add hl,bc
   ex de,hl
+  pop hl
+  ld a,(sprite_width)
+  ld c,a
+  add hl,bc
   pop bc
   djnz spriteloop_Erase
 
-
   pop hl
   inc hl
-  ld a,(sprite_x)
-  add a,8
-  ld (sprite_x),a
   pop de
   inc de
   pop bc
