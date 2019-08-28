@@ -1,4 +1,4 @@
-mulfixed8_8:
+mulfixed_88:
 ;Multiplies H.L by D.E, stores the result in H.L
 ; First, find out if the output is positive or negative
   ld a,h
@@ -30,13 +30,21 @@ _:
   ld c,l
   call mul16
 
+;Need to round, so get the top bit of L
+  sla l
+
 ;Get the middle two bytes, EH, and put them in HL
   ld l,h
   ld h,e
 
-;We should check for overflow. If D>0, we will set HL to 0x7FFF
   ld a,d
-  or a
+  ld de,0
+  adc hl,de
+
+;check for overflow!
+;We should check for overflow. If A>0, we will set HL to 0x7FFF
+  adc a,e
+  jr c,$+4
   jr z,+_
   ld hl,$7FFF
 _:
