@@ -1,4 +1,5 @@
-;Written by John Metcalf
+;This may be under a different License!
+;Written by John Metcalf here http://www.retroprogramming.com/2017/07/a-fast-z80-integer-square-root.html
 ; fast 16-bit integer square root
 ; 93 bytes, 354-389 cycles (average 372)
 ; v2 - 3 t-state optimization spotted by Russ McNulty
