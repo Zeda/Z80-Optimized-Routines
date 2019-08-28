@@ -87,3 +87,4 @@ fixed88_to_str_e_times_10:
   rla
   add a,'0'
   ret
+#endif
