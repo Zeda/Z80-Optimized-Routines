@@ -1,0 +1,104 @@
+;Created by E37
+#ifndef included_get_sFont_custom
+#define included_get_sFont_custom
+
+
+#define text_temp_RAM prevDData
+get_sFont_custom:
+;Acts similarly to B_CALL _Load_SFont
+;Inputs:
+;   A = char
+;Outputs:
+;   hl = sFont_record
+;   sFont_record = the 8 byte character sprite to be displayed
+   ld   h, 0
+   ld   l, a
+   add   hl, hl
+   add   hl, hl
+   add   hl, hl
+
+   ld   a, i   ;check if interrupts are enabled for re-enabling later
+   push   af   ;since we change the page swapped into $4000 - $7FFF bad things could happen if there was an interrupt there
+   push   bc
+
+   call   verify_call
+
+   ld   de, (text_temp_RAM)
+   add   hl, de
+   ld   de, sFont_record
+   push   de
+   ld   bc, 8
+   call   text_temp_RAM + 2
+   pop   hl
+
+   pop   bc
+   pop   af
+   ret   po   ;return if interrupts were disabled
+   ei      ;turn interrupts back on
+   ret
+
+verify_call:
+   ld   a, (text_temp_RAM + 14)
+   cp   0C9h
+   ret   z
+
+   push   hl
+   ld   a, (iy + hookflags3)
+   push   af
+   res   fontHookActive, (iy + hookflags3)   ;Disable the font hook flag while we get the pointer to the table or we might get a pointer to the custom font table instead
+   bcall(_SFont_Len)   ;A side effect of this bcall is that it leaves de equal to the start of the small font character table
+   pop   af            ;We can assume that the small font table is on the same page as bcall _SFont_Len
+   ld   (iy + hookflags3), a
+   di
+   ld   (text_temp_RAM), de   ;table address
+   in   a, (2h)
+   and   32
+   ld   a, 1Bh
+   jr   z, page_search_done
+   in   a, (21h)
+   rra    ;lower bit set means it's an SE
+   ld   a, 3Bh*4
+   rra
+   rra
+page_search_done:
+
+   ;a=page to search
+
+   ld   hl, get_SFont_Len_pointers   ;copy to ram and call
+   ld   de, text_temp_RAM + 2
+   ld   bc, 9
+   ldir
+
+   ld   b, a
+   in   a, (6)
+   ld   c, a
+   ld   a, b
+   call   text_temp_RAM + 2
+   ld a,l
+
+   ld   hl, get_text_sprite   ;Copy get_text_sprite
+   ld   de, text_temp_RAM + 2
+   ld   bc, 13
+   ldir
+
+   ld   (text_temp_RAM + 6), a
+   pop   hl
+   ret
+
+get_text_sprite:   ;length = 13 bytes
+   in   a, (6)
+   push   af
+   ld   a, 0   ;this can't be a 'xor a' since the program modifies that 0 to be whatever page the small font table is on
+   out   (6), a
+   ldir
+   pop   af
+   out   (6), a
+   ret
+
+get_SFont_Len_pointers:   ;length = 9 bytes
+   out   (6), a
+   ld   hl, (_SFont_Len + 2)
+   ld   a, c
+   out   (6), a
+   ret
+#endif

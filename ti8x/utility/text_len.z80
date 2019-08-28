@@ -1,0 +1,43 @@
+;Created by E37, optimized by Zeda
+
+#include "ti8x/utility/get_sFont_custom.z80"
+
+text_len:
+;finds the length in pixels the string
+;inputs:
+;   hl = zero terminated string
+;returns:
+;   de = length of the string in pixels
+
+   ld   bc, 0
+
+text_len_max:
+;inputs:
+;   hl = zero terminated string
+;   bc = maximum number of characters (it will stop after hl characters or when 0 is reached, whichever comes first)
+;returns:
+;   de = length of the string in pixels
+
+   xor a
+   ld d,a
+   ld e,a
+TextRLoop:
+   or   (hl)
+   ret   z
+;   push   bc
+   push   hl
+   push   de
+
+   call   get_sFont_custom    ;preserves BC
+   xor   a
+   ld   l, (hl)
+   ld   h, a
+   pop   de
+   add   hl, de
+   ex    de,hl
+
+   pop   hl
+;   pop   bc
+   cpi
+   jp    pe, TextRLoop
+   ret

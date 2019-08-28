@@ -1,0 +1,143 @@
+#include "ti8x/utility/get_sFont_custom.z80"
+
+;Created by E37
+;      Fast Small Font Text
+;
+;This is faster than most custom small font text routines because it cuts out the need of using B_CALL _Load_SFont
+;According to my tests, it is about 3x faster than the OS's display routine
+;It isn't a drop in replacement for the OS's text routine since it has different behavior in a couple edge cases
+;Unlike the OS's text routine, this always draws to a buffer. It also ignores any font hooks
+;All text flags like inverse and erase behind are ignored
+;By default it uses part of lFont_record as its storage memory. It will need to reload if you display anything in large font
+;The reload is automatic and you shouldn't worry about it
+;
+;
+;Using a custom font
+;Custom font does not affect the speed at all
+;To use a custom font, set (text_temp_RAM) to the address and (text_temp_RAM + 6) to the page
+;The table should be in the same format as the OS's small font table which is an 8 byte structure
+;The first byte is the length and the next 7 bytes are the sprite
+;You need to call get_sFont_custom once before setting the custom font so it can load. You DO NOT need to call it if you are not using a custom font
+;You will also need reset the custom font pointers every time you display something in large font
+
+
+fasttext:
+  ld bc,plotSScreen
+fast_text:
+;Displays the string pointed to by hl
+;inputs:
+;   hl = start of string to display
+;   bc = pointer to the buffer to display it on
+
+text_loop_body:
+   xor   a
+   or   (hl)
+   inc hl
+   ret   z
+   push   hl
+   call   get_sFont_custom
+   ld   de, penCol
+   ld   a, (de)
+   add   a, (hl)
+   ld   (de), a
+   sub   8
+   ld   h, b
+   ld   l, c
+   push   bc
+   ld   c, a
+#if (penCol&255)!=255
+   inc e
+#else
+  inc de
+#endif
+
+   ld   a, (de)
+   ld   e, a
+   ld   ix, sFont_record + 1
+   call   text_sprite
+   pop   bc
+   pop   hl
+   jr   text_loop_body
+
+text_sprite:
+;Almost exactly copy and pasted from Axe's sprite_or routine
+
+   ld   b, 5
+   ld   a, 63
+   sub   e
+   jr   nc, NoClipTop
+   ld   a, e
+   add   a, b
+   ret   nc
+ClipTop:
+   inc   ix
+   inc   e
+   jr   nz, ClipTop
+NoClipTop:
+   cp   b
+   jr   nc, NoClipBot
+   ld   b, a
+NoClipBot:
+   inc   b
+   ld   a, c
+   add   a, 7
+   cp   96 + 7
+   ret   nc
+   ld   d, 0
+   sla   e
+   sla   e
+   add   hl, de
+   rra
+   add   hl, de
+   rra
+   add   hl, de
+   rra
+   ld   e, a
+   add   hl, de
+   ld   a, c
+   and   7
+   jr   z, Aligned
+   ld   e, c
+   ld   c, a
+   ld   a, e
+   cp   -7
+   sbc   a, a
+   ld   d, a
+   and   e
+   cp   96 - 7
+   sbc   a, a
+   ld   e, a
+OrLoop:
+   push   bc
+   ld   b, c
+   ld   c, (ix)
+   xor   a
+Shift:
+   srl   c
+   rra
+   djnz   Shift
+   and   e
+   or   (hl)
+   ld   (hl), a
+   dec   hl
+   ld   a, c
+   and   d
+   or   (hl)
+   ld   (hl), a
+   ld   c, 13
+   add   hl, bc
+   inc   ix
+   pop   bc
+   djnz   OrLoop
+   ret
+
+Aligned:
+   ld   e, 12
+AlignedLoop:
+   ld   a, (ix)
+   or   (hl)
+   ld   (hl), a
+   inc   ix
+   add   hl, de
+   djnz   AlignedLoop
+   ret
