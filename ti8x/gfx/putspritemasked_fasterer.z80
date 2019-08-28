@@ -55,33 +55,33 @@ putsprite_masked:
 putsprite_masked_loop:
   push bc
   xor a
-  ld   d,(ix)
-  ld   e,a
+  ld d,(ix)
+  ld e,a
   sub c
   ld b,c
   ld c,$FF
   inc ix
   ld a,(ix)
-  jr   z,putsprite_masked_rotdone
+  jr z,putsprite_masked_rotdone
 putsprite_masked_rot:
   scf
   rra
   rr c
-  srl   d
-  rr   e
+  srl d
+  rr e
   djnz putsprite_masked_rot
 putsprite_masked_rotdone:
   and (hl)
-  or   d
-  ld   (hl),a
-  inc   hl
-  ld   a,(hl)
+  or d
+  ld (hl),a
+  inc hl
+  ld a,(hl)
   and c
-  or   e
-  ld   (hl),a
+  or e
+  ld (hl),a
   ld c,11
-  add   hl,bc
-  inc   ix
+  add hl,bc
+  inc ix
   pop bc
-  djnz   putsprite_masked_loop
+  djnz putsprite_masked_loop
   ret
