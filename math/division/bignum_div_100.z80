@@ -31,3 +31,4 @@ _:
     sla e \ rla  \ cp c \ jr c,$+4 \ sub a,c \ inc e
     ld (hl),a
     djnz -_
+    ret
