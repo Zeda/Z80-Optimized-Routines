@@ -1,10 +1,7 @@
 #ifndef included_fixed_4_12_to_str
 #define included_fixed_4_12_to_str
 
-#include "conversion/fixed_4_12_to_str.z80"
-
-
-;Written by Zeda.
+;Written by Zeda, free to use.
 ;This converts a 4.12 fixed-point number to a string.
 ;It displays up to 4 digits after the decimal.
 
