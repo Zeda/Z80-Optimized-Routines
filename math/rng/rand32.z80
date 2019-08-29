@@ -6,6 +6,7 @@ rand32:
 ;LFSR taps: 0,2,6,7  = 11000101
 ;291cc
 ;Thanks to Runer112 for his help on optimizing the LCG and suggesting to try the much simpler LCG. On their own, the two are terrible, but together they are great.
+;58 bytes
 seed1_0=$+1
     ld hl,12345
 seed1_1=$+1
