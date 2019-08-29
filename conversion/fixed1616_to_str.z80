@@ -1,0 +1,75 @@
+#ifndef included_fixed1616_to_str
+#define included_fixed1616_to_str
+
+#include "conversion/itoa_16.z80"
+fixed1616_to_str:
+;DE.BC is the float
+;HL points to where to write the string
+  push hl
+  call +_
+  pop hl
+  ret
+_:
+  bit 7,d
+  jr z,+_
+  xor a
+  sub c
+  ld c,a
+  ld a,0
+  sbc a,b
+  ld b,a
+  ld a,0
+  sbc a,e
+  ld e,a
+  sbc a,a
+  sub d
+  ld d,a
+  ld (hl),$1A
+  inc hl
+_:
+  push bc
+  call itoa_16
+
+;find the end of the string
+  xor a
+  cpir
+  pop de
+  or e
+  or d
+  ret z
+
+  dec hl
+  ld (hl),'.'
+  inc hl
+  ex de,hl
+;DE points to the output
+;HL is the fractional part
+  call fixed1616_to_str_sub
+  call fixed1616_to_str_sub
+  call fixed1616_to_str_sub
+  call fixed1616_to_str_sub
+  call fixed1616_to_str_sub
+  call fixed1616_to_str_sub
+  ex de,hl
+  ld a,'0'
+_:
+  dec hl
+  cp (hl)
+  jr z,-_
+  inc hl
+  ld (hl),0
+  ret
+
+fixed1616_to_str_sub:
+  xor a
+  ld b,h
+  ld c,l
+  add hl,hl \ rla
+  add hl,hl \ rla
+  add hl,bc \ adc a,$18
+  add hl,hl \ rla
+  ld (de),a
+  inc de
+  ret
+
+#endif

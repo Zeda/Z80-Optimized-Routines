@@ -1,0 +1,26 @@
+#include "conversion/fixed1616_to_str.z80"
+dispfixed1616:
+;Inputs:
+;   DE.BC is an 8.8 fixed-point number
+;Output:
+;   DE.BC is printed to the screen at (curCol, curRow)
+;   curCol is set to 0
+;   curRow is advanced.
+;      If curRow is 8, then the contents of the homescreen
+;      are shifted up one row and curRow is set to 7.
+;Destroys:
+;   9 bytes at OP1
+;Notes: Preserves registers.
+  push hl
+  push de
+  push bc
+  push af
+  ld hl,OP1
+  call fixed1616_to_str
+  bcall(_PutS)
+  bcall(_NewLine)
+  pop af
+  pop bc
+  pop de
+  pop hl
+  ret
