@@ -5,7 +5,8 @@
 
 #define text_temp_RAM prevDData
 get_sFont_custom:
-;Acts similarly to B_CALL _Load_SFont
+;Different input but same output as B_CALL _Load_SFont (Destroys a, hl, de)
+;See fasttext.z80 for using custom font
 ;Inputs:
 ;   A = char
 ;Outputs:

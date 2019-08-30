@@ -14,7 +14,7 @@ text_len:
 text_len_max:
 ;inputs:
 ;   hl = zero terminated string
-;   bc = maximum number of characters (it will stop after hl characters or when 0 is reached, whichever comes first)
+;   bc = maximum number of characters (it will stop after BC characters or when 0 is reached, whichever comes first)
 ;returns:
 ;   de = length of the string in pixels
 
