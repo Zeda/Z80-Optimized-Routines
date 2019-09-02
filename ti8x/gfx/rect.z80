@@ -67,6 +67,7 @@ _:
 ;E is height
 
   push bc
+  ld l,b
   ld a,b
   and 7
   ld b,a
@@ -78,7 +79,7 @@ _:
   cpl
   ld h,a    ;start mask
 
-  ld a,b
+  ld a,l
   add a,d
   and 7
   ld b,a
