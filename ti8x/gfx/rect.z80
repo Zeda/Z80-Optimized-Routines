@@ -1,4 +1,5 @@
-#define included_rect
+#ifndef included_rectsub
+#define included_rectsub
 rectsub:
 ;(B,C) = (x,y) signed
 ;(D,E) = (w,h) unsigned
@@ -126,3 +127,4 @@ _:
   pop de
   scf
   ret
+#endif
