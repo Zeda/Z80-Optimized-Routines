@@ -45,11 +45,19 @@ uitoa_16:
   inc hl
   ld (hl),0
 
-;No strip the leading zeros
+;Now strip the leading zeros
   ld c,-6
   add hl,bc
   ld a,'0'
   inc hl \ cp (hl) \ jr z,$-2
+
+;Make sure that the string is non-empty!
+  ld a,(hl)
+  or a
+  jr nz,+_
+  dec hl
+_:
+
   pop af
   pop bc
   pop de

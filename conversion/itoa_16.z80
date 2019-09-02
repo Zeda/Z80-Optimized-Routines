@@ -70,6 +70,13 @@ _:
   cp (hl)
   jr z,$-2
 
+;Make sure that the string is non-empty!
+  ld a,(hl)
+  or a
+  jr nz,+_
+  dec hl
+_:
+
 ;Check if we need to re-write the negative sign
   pop af
   jr nz,+_
