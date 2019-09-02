@@ -1,0 +1,47 @@
+#ifndef included_getKeyDebounce
+#define included_getkeyDebounce
+#include "ti8x/utility/getKey.z80"
+
+;Needs the following defined.
+;Feel free to change the constants
+;#define K_DELAY_DEFAULT 13
+;#define K_DELAY_ACCEL 3
+;k_save      = 8000h
+
+getKeyDebounce:
+k_count     = k_save+1
+k_delay     = k_count+1
+  ei
+  halt
+  call GetKey
+  ld hl,k_save
+  cp (hl)
+  jr nz,newkeypress
+;if the keys match, decrement k_count
+  inc hl
+  dec (hl)
+  jr z,+_
+  xor a
+  ret
+_:
+  inc hl
+  ld a,(hl)
+  sub K_DELAY_ACCEL+1
+  jr nc,+_
+  xor a
+_:
+  inc a
+  ld (hl),a
+  dec hl
+  ld (hl),a
+  dec hl
+  ld a,(hl)
+  ret
+newkeypress:
+  ld (hl),a
+  inc hl
+  ld (hl),K_DELAY_DEFAULT
+  inc hl
+  ld (hl),K_DELAY_DEFAULT
+  ret
+#endif
