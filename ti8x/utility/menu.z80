@@ -1,0 +1,421 @@
+;Written by Zeda. Free to use!
+
+#include "ti8x/utility/getKeyDebounce.z80"
+
+
+;This routine is a little complicated to set up!
+;It is intended to work in a variety of environments, so it needs a few
+;variables, and 17 bytes of RAM.
+
+;===============================================================================
+;First, you'll need to define the routine that you are using to display text.
+;#define Text() bcall(_VPutS)
+
+;How tall is the text?
+;#define TEXT_HEIGHT 6
+
+;Is the text padded above with a row of pixels?
+;#define TEXT_PAD_TOP    ;comment if there is not a row of padding above the text
+
+;Are text coords stored with the upper byte as Y and lower byte as X ?
+;If so, uncomment the following! You'll want this for VPutS, for example.
+;#define TEXTCOORD_YX      ;define if textcoord is Y then X (TI-OS is Y then X for small font, large font and some custom text routines use the opposite)
+
+;Where are the text coordinates stored?
+;textcoord       = penCol
+
+;How are you updating the LCD? Expect interrupts to be on, but you may turn them off.
+; #macro LCD_Update()
+;   di
+;   call UpdateLCD
+; #endmacro
+
+;We need to draw rectangles, so what routines do you want to use?
+;Inputs are (B,C)=(x,y), and (D,E)=(width,height)
+; #macro rect_OR()
+;   ;Draw a black rectangle
+;   ld hl,plotSScreen
+;   call rectOR
+; #endmacro
+;
+; #macro rect_XOR()
+;   ;Draw an inverted rectangle
+;   ld hl,plotSScreen
+;   call rectXOR
+; #endmacro
+;
+; #macro rect_Erase()
+;   ;Draw a white rectangle
+;   ld hl,plotSScreen
+;   call rectErase
+; #endmacro
+;
+
+;Now define where vars are located, 17 bytes required in all.
+;textbox_top     = $8000
+;textbox_left    = textbox_top+1    ;needs to follow textbox_top
+;textbox_bottom  = $8002
+;textbox_right   = textbox_bottom+1 ;needs to follow textbox_bottom
+;menucallptr     = $8004
+;menutop         = $8006
+;menucur         = $8008
+;menuselection   = $800A
+;menuheader_ptr  = $800C
+;menuheader_coord= $800E
+;menuheader_cur  = $8010   ;1 byte
+;===============================================================================
+
+
+menu:
+;Input:
+;   (B,C) = (x,y)
+;   (D,E) = (width,height)
+;   HL points to the header
+;   IX points to the get/select code
+;     If you are using the TI-OS VPutS routine, you'll need to have the textWrite flag set in sGrFlags
+;Notes:
+;   The header is set up as follows:
+;       .db number_of_titles
+;       .db "title 0",0
+;       .db "title 1",0
+;       .db "title 2",0
+;       ...
+;
+;   The get/select code is passed the following information:
+;       A is the index of the current title (0 is the first, 1 is the second, etc.)
+;       HL is the index of the currently highlighted item
+;       carry flag is reset if it needs to return a pointer to the string for the element
+;           Return carry flag as set if the element is out-of-bounds.
+;       carry flag is set if it needs to return a pointer to the data for the element
+  ld (menucallptr),ix
+
+;save box dimensions
+  push bc
+
+;Save the pointer to the menu headers field
+  ld (menuheader_ptr),hl
+
+;Set the menu header to header 0
+  xor a
+  ld (menuheader_cur),a
+
+;establish the bottom and right edges of the textbox
+  ld a,c
+  add a,e
+  ld (textbox_bottom),a
+  ld a,b
+  add a,d
+  ld (textbox_right),a
+
+; Draw the rectangle for the menu. Black border, white fill.
+  rect_OR()
+
+; Display the header
+; get coords
+  pop hl
+  inc h
+  inc h
+  inc l
+  push hl
+#ifdef TEXTCOORD_YX
+  ;need to swap the coords order
+  ld a,h
+  ld h,l
+  ld l,a
+#endif
+  ld (menuheader_coord),hl
+  call draw_header
+  pop bc
+
+
+;Before we do too much, let's establish the top-left textbox boundaries.
+  ld a,TEXT_HEIGHT+2
+  add a,c
+  ld c,a
+  ld (textbox_top),bc
+
+  call reset_menu_cursor
+
+;===============================================================================
+; Now we have drawn the menu box, we have to populate it.
+; We'll call a routine to get the n-th string to be displayed.
+; Stop fetching once the next item would go at or past textbox_bottom.
+; Draw at least one item.
+
+menu_render:
+
+
+;Restore the text coordinates top
+  ld hl,(textbox_top)
+#ifndef TEXT_PAD_TOP
+  inc l
+#endif
+#ifdef TEXTCOORD_YX
+  ;need to swap the coords order
+  ld a,h
+  ld h,l
+  ld l,a
+#endif
+  ld (textcoord),hl
+
+;rerender the items
+  call menu_render_sub
+menu_render_0:
+;highlight the current option
+  ld bc,(menuselection)
+  ld hl,(textbox_bottom)
+  ld a,h
+  sub b
+  ld d,a
+  ld e,TEXT_HEIGHT+1
+  dec d
+  push de
+  push bc
+  rect_XOR()
+  LCD_Update()
+  pop bc
+  pop de
+  rect_XOR()
+;wait for a keypress
+_:
+  in a,(4)
+  and 8
+  jr z,menu_get_select_err
+
+  call getKeyDebounce
+  or a
+  jr z,-_
+  cp 9
+  scf
+  jr z,menu_get_select
+  cp 15
+  jr z,menu_get_select_err
+
+  call menu_arrow
+  jr c,menu_render_0
+  jr menu_render
+
+menu_get_select:
+  ld hl,(menucallptr)
+  ld a,(menuheader_cur)
+  jp (hl)
+
+menu_render_sub:
+; need to clear out the textbox
+  ld bc,(textbox_top)
+  ld hl,(textbox_bottom)
+  ld a,h
+  sub b
+  ld d,a
+  ld a,l
+  sub c
+  ld e,a
+  dec e
+  dec b
+  rect_Erase()
+  xor a
+  ld bc,(menutop)
+
+menu_render_sub_loop:
+  push bc
+  call menu_get_select
+  pop bc
+  ret c
+  ld de,(textcoord)
+  push de
+  Text()
+  pop de
+#ifdef TEXTCOORD_YX
+  ld a,TEXT_HEIGHT
+  add a,d
+  ld d,a
+  ld a,(textbox_bottom)
+#ifdef TEXT_PAD_TOP
+  sub TEXT_HEIGHT+2
+#else
+  sub TEXT_HEIGHT+1
+#endif
+  cp d
+#else
+  ld a,TEXT_HEIGHT
+  add a,e
+  ld e,a
+  ld a,(textbox_bottom)
+#ifdef TEXT_PAD_TOP
+  sub TEXT_HEIGHT+2
+#else
+  sub TEXT_HEIGHT+1
+#endif
+  cp e
+#endif
+  ld (textcoord),de
+  inc bc
+  jr nc,menu_render_sub_loop
+  ret
+
+menu_get_select_err:
+;return a null pointer.
+;A=0, HL=0
+  xor a
+  ld h,a
+  ld l,a
+  ret
+
+menu_arrow:
+;check arrow keys
+  dec a
+  jr z,menu_down
+  dec a
+  jr z,menu_left
+  dec a
+  jr z,menu_right
+  add a,-1      ;sets the carry flag if it is not a keypress
+  ret nz
+
+;if would select oob
+;   if next element exists
+;       increment the menutop and rerender the menu
+;else
+;   move menuselection
+menu_up:
+  or a
+  ld bc,(menucur)
+  dec bc
+  push bc
+  call menu_get_select
+  pop hl
+  ret c
+  ld (menucur),hl
+
+  ld a,(menuselection)
+  ld hl,(textbox_top)
+  cp l
+  jr z,+_
+  sub TEXT_HEIGHT
+  ld (menuselection),a
+  scf
+  ret
+_:
+  ld hl,(menutop)
+  dec hl
+  ld (menutop),hl
+  ret
+
+menu_down:
+  or a
+  ld bc,(menucur)
+  inc bc
+  push bc
+  call menu_get_select
+  pop hl
+  ret c
+  ld (menucur),hl
+
+  ld a,(menuselection)
+  add a,TEXT_HEIGHT+TEXT_HEIGHT+1
+  ld hl,(textbox_bottom)
+  cp l
+  jr nc,+_
+  sub TEXT_HEIGHT+1
+  ld (menuselection),a
+  scf
+  ret
+_:
+  ld hl,(menutop)
+  inc hl
+  ld (menutop),hl
+  ret
+
+
+;These change to the next menu header
+menu_left:
+  ld a,(menuheader_cur)
+  dec a
+  jr +_
+menu_right:
+  ld a,(menuheader_cur)
+  inc a
+_:
+  ld (menuheader_cur),a
+  call reset_menu_cursor
+
+draw_header:
+;Set up textcoord
+  ld hl,(menuheader_coord)
+#ifndef TEXT_PAD_TOP
+#ifdef TEXTCOORD_YX
+  inc h
+#else
+  inc l
+#endif
+#endif
+  ld (textcoord),hl
+
+
+;Need to erase the current header area
+#ifdef TEXTCOORD_YX
+  ;need to swap the coords order
+  ld b,l
+  ld c,h
+#else
+  ld b,h
+  ld c,l
+#endif
+#ifndef TEXT_PAD_TOP
+  dec c
+#endif
+
+  ld de,(textbox_bottom)
+  ld a,d
+  sub b
+  ld d,a
+  dec b
+  ld e,TEXT_HEIGHT+1
+  rect_Erase()
+
+
+;Verify that the header element is valid, wrap if needed
+  ld hl,(menuheader_ptr)
+  ld a,(menuheader_cur)
+  cp (hl)
+  jr c,+_
+  inc a
+  jr nz,$+5
+  ;cycle to the last header
+  ld a,(hl)
+  dec a
+  .db $FE
+  ;cycle to the first header
+  xor a
+  ld (menuheader_cur),a
+_:
+
+;A is the header to seek
+  ld bc,0   ;using CPIR, want to make sure it doesn't exit too soon!
+  inc hl    ;point to the first header
+  or a
+  jr draw_header_loopend
+draw_header_loop:
+  push af
+  xor a
+  cpir
+  pop af
+  dec a
+draw_header_loopend:
+  jr nz,draw_header_loop
+
+;now draw the header
+  Text()
+  or a
+  ret
+
+reset_menu_cursor:
+  ld hl,(textbox_top)
+  dec h
+  ld (menuselection),hl
+  ld hl,0
+  ld (menutop),hl
+  ld (menucur),hl
+  ret
+
+.echo "Menu: ",$-menu," bytes"
