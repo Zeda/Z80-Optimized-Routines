@@ -1,3 +1,5 @@
+#include "ti8x/gfx/rect.z80"
+
 rectXOR:
 ;  (B,C) = (x,y) signed
 ;  (D,E) = (w,h) unsigned
@@ -41,6 +43,3 @@ xorrect0:
     add hl,de
     djnz $-4
     ret
-#ifndef included_rect
-#include "rect.z80"
-#endif

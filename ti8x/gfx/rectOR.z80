@@ -1,7 +1,9 @@
+#include "ti8x/gfx/rect.z80"
+
 rectOR:
-;;  (B,C) = (x,y) signed
-;;  (D,E) = (w,h) unsigned
-;;  HL points to buf
+;  (B,C) = (x,y) signed
+;  (D,E) = (w,h) unsigned
+;  HL points to buf
     push hl
     call rectSub
     pop ix
@@ -42,6 +44,3 @@ orrect0:
     add hl,de
     djnz $-4
     ret
-#ifndef included_rect
-#include "rect.z80"
-#endif

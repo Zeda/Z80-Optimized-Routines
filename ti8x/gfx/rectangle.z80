@@ -1,8 +1,7 @@
-;;  (B,C) = (x,y) signed
-;;  (D,E) = (w,h) unsigned
-;;  HL points to buf
-
 rectEraseBorder:
+;  (B,C) = (x,y) signed
+;  (D,E) = (w,h) unsigned
+;  HL points to buf
     ld (bufptr),hl
     call rectSub
     ret nc
@@ -63,7 +62,7 @@ _:
     dec c
     jr nz,-_
     ret
-    
+
     ret
 rectXORBorder:
     ld (bufptr),hl
