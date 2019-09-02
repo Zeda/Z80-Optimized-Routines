@@ -1,6 +1,6 @@
 ;author: calcmaniac84, I think
 ;Copy zero terminated string at HL to DE.
-StrCopy:
+strcopy:
  xor a
 docopystr:
  cp (hl)

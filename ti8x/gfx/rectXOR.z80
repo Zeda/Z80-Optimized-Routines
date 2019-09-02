@@ -1,7 +1,7 @@
 rectXOR:
-;;  (B,C) = (x,y) signed
-;;  (D,E) = (w,h) unsigned
-;;  HL points to buf
+;  (B,C) = (x,y) signed
+;  (D,E) = (w,h) unsigned
+;  HL points to buf
     push hl
     call rectSub
     pop ix
