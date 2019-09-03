@@ -417,5 +417,3 @@ reset_menu_cursor:
   ld (menutop),hl
   ld (menucur),hl
   ret
-
-.echo "Menu: ",$-menu," bytes"
