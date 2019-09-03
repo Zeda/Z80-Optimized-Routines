@@ -3,13 +3,11 @@
 
 #include "conversion/itoa_16.z80"
 fixed1616_to_str:
-;DE.BC is the float
-;HL points to where to write the string
-  push hl
-  call +_
-  pop hl
-  ret
-_:
+;Input:
+;   DE.BC is the float
+;   HL points to where to write the string (at least 14 bytes)
+;Output:
+;   HL points to the string (not necessarily matching the input)
   bit 7,d
   jr z,+_
   xor a
@@ -24,19 +22,25 @@ _:
   sbc a,a
   sub d
   ld d,a
-  ld (hl),$1A
   inc hl
 _:
   push bc
+  push af   ;z flag set if no negative sign
   call itoa_16
+  pop af
+  jr z,+_
+  dec hl
+  ld (hl),$1A
+_:
+  pop de
+  ld a,d
+  or e
+  ret z
+  push hl
 
 ;find the end of the string
   xor a
   cpir
-  pop de
-  or e
-  or d
-  ret z
 
   dec hl
   ld (hl),'.'
@@ -58,6 +62,7 @@ _:
   jr z,-_
   inc hl
   ld (hl),0
+  pop hl
   ret
 
 fixed1616_to_str_sub:
