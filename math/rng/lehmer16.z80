@@ -13,7 +13,7 @@ lehmer:
 ;Notes:
 ;    Uses the Lehmer RNG used by the Sinclair ZX81
 ;    75x mod 65537 -> x
-#ifdef SMC
+#ifndef SMC
     ld hl,(seed)
 #else
 seed = $+1
