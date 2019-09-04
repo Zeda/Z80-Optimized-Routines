@@ -1,0 +1,43 @@
+getpixelloc:
+;Input: (B,C) is (X,Y)
+;Output: A is the mask, HL is the byte the pixel is on, nc if out-of-bounds
+;Destroys: BC
+;NOTE: Assumes plotSScreen = 9340h
+;44 bytes (or 47 bytes if the pixLUT crosses a 256-byte boundary)
+;184cc (or 195~196  if the pixLUT crosses a 256-byte boundary)
+  ld a,c
+  cp 64
+  ret nc
+  ld a,b
+  cp 96
+  ret nc
+
+  ld b,11
+  ld h,b
+  ld l,c
+  add hl,hl
+  add hl,bc
+  inc h
+  add hl,hl
+  add hl,hl
+  ld c,a
+  srl c
+  scf
+  rr c
+  srl c
+  add hl,bc
+
+  and 7
+  ld bc,pixLUT
+  add a,c
+  ld c,a
+#if (pixLUT&255)>248
+  jr nc,$+3
+  inc b
+#endif
+  ld a,(bc)
+  scf
+  ret
+
+pixLUT:
+  .db $80,$40,$20,$10,$08,$04,$02,$01
