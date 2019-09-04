@@ -1,0 +1,143 @@
+#define SMC
+#define NUM_POINTS 3    ;3 is a triangle, 4 is a square. Those are the options!
+
+plotSScreen = 9340h
+gbuf        = plotSScreen
+
+.db $BB,$6D
+.org $9D95
+
+chaos:
+;We'll be doing low-level polling of the keyboard and writing to the LCD.
+;Gotta turn off interrupts.
+    di
+
+;Set the calc to the highest speed
+    in a,(2)
+    rla
+    sbc a,a
+    out (20h),a
+
+;Now clear out gbuf
+    ld hl,gbuf
+    ld de,gbuf+1
+    ld bc,767
+    ld (hl),0
+    ldir
+
+;Setup the keyboard to read from the group containing [ENTER] through [CLEAR]
+    ld a,%11111101
+    out (1),a
+
+chaosloop:
+
+;Increment the counter, quit if it hits 0 (counter starts at a negative value)
+counter=$+1
+    ld hl,0     ;set this to -1000 to run 1000 iterations. 0 does 65536 iterations.
+    inc l
+    jr nz,+_
+    inc h
+    ret z
+_:
+    ld (counter),hl
+
+;Get the Y coordinate and write the appropriate value to the LCD
+    ld a,(curcoord)     ;y
+    add a,80h
+    out (16),a
+
+;Get a random number in HL while we are waiting for the LCD to be ready
+    call rand
+
+;get the X coordinate an write the appropriate value to the LCD
+    ld a,(curcoord+1)   ;x
+    ;clear out bottom bits
+    and %11111000
+    ;set carry flag so that we rotate in a 1
+    ;net result is 20h+(A>>3)
+    scf
+    rra
+    rra
+    rra
+    out (16),a
+
+;Conver the random number in HL to an index into the vertices LUT
+    xor a
+#if NUM_POINTS = 3
+    ld d,h
+    ld e,l
+    add hl,hl \ rla
+    add hl,de \ adc a,0
+#else
+    add hl,hl \ rla
+    add hl,hl \ rla
+#endif
+
+;Get the pointer to the vertex coords
+    add a,a
+    ld de,vertices
+    add a,e
+    ld e,a
+#if ((vertices&255)+(NUM_POINTS*2)) >= 256
+    jr nc,$+3
+    inc d
+#endif
+
+;DE points to the vertex that we want, but before we do too much,
+;let's plot the pixel at the previous coordinates
+    ld bc,(curcoord)
+    call getpixelloc
+    or (hl)
+    ld (hl),a
+    out (17),a
+
+;Now jump halfway to the vertex
+    ld hl,curcoord
+;HL points to the current coordinate, DE points to the vertex
+    ld a,(de)
+    add a,(hl)
+    rra
+    ld (hl),a
+    inc hl
+    inc de
+    ld a,(de)
+    add a,(hl)
+    rra
+    ld (hl),a
+
+;check if [CLEAR] is being pressed
+    in a,(1)
+    and 40h
+    jp nz,chaosloop
+    ret
+rand:
+;Uncomment one of the following to use it as the RNG of choice
+;Expects the output in HL
+; #include "math/rng/lehmer16.z80"
+; #include "math/rng/lfsr.z80"         ;fails the chaos tests hard
+; #include "math/rng/rand16.z80"
+; #include "math/rng/rand24.z80"
+; #include "math/rng/rand32.z80"
+; #include "math/rng/xs32.z80"
+#include "math/rng/xsp32.z80"
+
+
+#include "ti8x/gfx/getpixelloc_0x9340_nobounds.z80"
+
+curcoord:
+.db 0,0   ;This is the initial starting point. Center of the screen, feel free to move
+
+vertices:
+;Feel free to experiment with the locations of the points!
+#if NUM_POINTS = 3
+.db 0,47  ;\
+.db 63,0  ; | These points make a triangle. Result is a Sierpinski's Triangle
+.db 63,95 ;/
+#else
+.db 0,0   ;\
+.db 0,95  ; |These points make a rectangle. Should evenly fill.
+.db 63,0  ; |
+.db 63,95 ;/
+#endif
+
+.echo $-$9D95
