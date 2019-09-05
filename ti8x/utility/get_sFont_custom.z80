@@ -7,6 +7,9 @@
 get_sFont_custom:
 ;Different input but same output as B_CALL _Load_SFont (Destroys a, hl, de)
 ;See fasttext.z80 for using custom font
+;I can't seem to get this to work on a ti-83 emulator. It seems that the code that gets the calculator's type (1B 3B etc...) returns 7B instead of the 1B it should. Can someone verify that on real hardware or another emulator?
+;Works fine on the ti-84+ and se
+;
 ;Inputs:
 ;   A = char
 ;Outputs:
