@@ -53,9 +53,6 @@ verify_call:
    ld   (iy + hookflags3), a
    di
    ld   (text_temp_RAM), de   ;table address
-   
-   ld a,3
-   ;a=page to search
 
    ld   hl, get_SFont_Len_pointers   ;copy to ram and call
    ld   de, text_temp_RAM + 2
@@ -74,14 +71,13 @@ verify_call:
    ld   bc, 13
    ldir
 
-   ld   (text_temp_RAM + 6), a
    pop   hl
    ret
 
 get_text_sprite:   ;length = 13 bytes
    in   a, (6)
    push   af
-   ld   a, 0   ;this can't be a 'xor a' since the program modifies that 0 to be whatever page the small font table is on
+   ld   a, 3
    out   (6), a
    ldir
    pop   af
