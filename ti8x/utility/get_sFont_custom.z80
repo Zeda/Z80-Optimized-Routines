@@ -22,6 +22,7 @@ get_sFont_custom:
    ld   a, i   ;check if interrupts are enabled for re-enabling later
    push   af   ;since we change the page swapped into $4000 - $7FFF bad things could happen if there was an interrupt there
    push   bc
+   di          ;We'll be doing off-page calls, so to be safe, disable interrupts
 
    call   verify_call
 
@@ -51,7 +52,6 @@ verify_call:
    bcall(_SFont_Len)   ;A side effect of this bcall is that it leaves de equal to the start of the small font character table
    pop   af            ;We can assume that the small font table is on the same page as bcall _SFont_Len
    ld   (iy + hookflags3), a
-   di
    ld   (text_temp_RAM), de   ;table address
 
    ld   hl, get_SFont_Len_pointers   ;copy to ram and call
