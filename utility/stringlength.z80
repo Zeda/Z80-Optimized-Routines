@@ -1,12 +1,28 @@
+; stringlength:
+; ;Returns BC as the length of the null-terminated string (including null byte).
+;   xor a
+;   ld c,a
+;   ld b,a
+;   cpir
+;   sub c
+;   ld c,a
+;   sbc a,a
+;   sub b
+;   ld b,a
+;   ret
+
+
+;This version returns the string length without the null byte
 stringlength:
-;Returns BC as the length of the null-terminated string (including null byte).
+;Returns BC as the length of the null-terminated string
   xor a
   ld c,a
   ld b,a
   cpir
-  sub c
+  dec a   ;A is $FF
+  xor c
   ld c,a
-  sbc a,a
-  sub b
+  ld a,b
+  cpl
   ld b,a
   ret
