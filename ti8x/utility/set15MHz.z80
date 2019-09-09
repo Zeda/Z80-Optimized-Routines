@@ -1,0 +1,17 @@
+set15MHz:
+;This sets the clock speed to the highest possible for the calc it is running on.
+;At this writing, the highest is 15MHz, but TI had planned on 20MHz and 25MHz, possibly.
+;This routine selects speed 3, which would have been 25MHz.
+  in a,(2)
+  add a,a
+  sbc a,a
+  out (20h),a
+  ret
+
+; set15MHz:
+; ;This sets the clock speed to 15MHz, but is +3cc, +1 byte.
+;   in a,(2)
+;   and %10000000
+;   rlca
+;   out (20h),a
+;   ret
