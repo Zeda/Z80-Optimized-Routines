@@ -6,11 +6,26 @@
 ;requires 4 bytes of temporary RAM, but doesn't use SMC
 
 
-spritetmp = 8000h
+;spritetmp = 8000h
 sprite_width  = spritetmp+0
 sprite_x      = spritetmp+1
 sprite_mask0  = spritetmp+2
 sprite_mask1  = spritetmp+3
+
+rshiftHA_7:
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  rr h \ rra
+  ex de,hl
+  ld e,a
+  ret
+
+spritemask:
+  .db $00,$80,$C0,$E0,$F0,$F8,$FC,$FE
 
 bigsprite_subroutine:
 ;Inputs:
@@ -131,20 +146,6 @@ _:
   scf
   ret
 
-rshiftHA_7:
-  rr h \ rra
-  rr h \ rra
-  rr h \ rra
-  rr h \ rra
-  rr h \ rra
-  rr h \ rra
-  rr h \ rra
-  ex de,hl
-  ld e,a
-  ret
-
-spritemask:
-  .db $00,$80,$C0,$E0,$F0,$F8,$FC,$FE
 call_ix:
   jp (ix)
 #endif
