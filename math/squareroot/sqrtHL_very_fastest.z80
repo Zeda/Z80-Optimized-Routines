@@ -1,13 +1,20 @@
-;This may be under a different License!
+;You may use this amazing routine, just be sure to credit John Metcalf!
+
+
+sqrtHL:
 ;Written by John Metcalf here http://www.retroprogramming.com/2017/07/a-fast-z80-integer-square-root.html
+;With some comments from Zeda
 ; fast 16-bit integer square root
-; 93 bytes, 354-389 cycles (average 372)
+; 90 bytes, 345-384 cycles (average 365.5)
+
+
+
 ; v2 - 3 t-state optimization spotted by Russ McNulty
 
 ; call with hl = number to square root
 ; returns    a = square root
 ; corrupts  hl, de
-
+sqrtHL:
   ld a,h
   ld de,0B0C0h
   add a,e
@@ -21,7 +28,7 @@ sq7:
   add a,d
   jr nc,sq6
   res 5,d
-  db 254
+  db 254      ;this starts the `cp *` instruction to eat the following `sub d`
 sq6:
   sub d
   sra d
@@ -32,7 +39,7 @@ sq6:
   add a,d
   jr nc,sq5
   res 3,d
-  db 254
+  db 254      ;this starts the `cp *` instruction to eat the following `sub d`
 sq5:
   sub d
   sra d
@@ -43,22 +50,23 @@ sq5:
   add a,d
   jr nc,sq4
   res 1,d
-  db 254
+  db 254      ;this starts the `cp *` instruction to eat the following `sub d`
 sq4:
   sub d
   sra d
   ld h,a
 
+;With this iteration, we start working on E and can pretty much ignore D
 ; ----------
 
+  xor a
   add hl,de
-  jr nc,sq3
-  ld e,040h
-  db 210
-sq3:
+  jr c,sq3
   sbc hl,de
+sq3:
+  rra
+  add a,e
   sra d
-  ld a,e
   rra
 
 ; ----------
@@ -68,7 +76,7 @@ sq3:
   add hl,de
   jr nc,sq2
   and 0DFh
-  db 218
+  db 218      ;This starts the `jp c,**` instruction. Note that the previous `and` resets the carry flag
 sq2:
   sbc hl,de
   sra d
@@ -81,7 +89,7 @@ sq2:
   add hl,de
   jr nc,sq1
   and 0F7h
-  db 218
+  db 218      ;This starts the `jp c,**` instruction. See comment above.
 sq1:
   sbc hl,de
   sra d
@@ -89,12 +97,10 @@ sq1:
 
 ; ----------
 
-  inc a
   ld e,a
+  inc e
   add hl,de
-  jr nc,sq0
-  and 0FDh
-sq0:
+  sbc a,0
   sra d
   rra
   cpl
