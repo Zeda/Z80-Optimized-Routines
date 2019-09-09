@@ -1,9 +1,13 @@
 ;You may use this amazing routine, just be sure to credit John Metcalf!
 
+;#define SQRT_RETURN_REMAINDER    ;Uncomment this to return the remainder in HL. Adds 4 bytes and 12cc or 22cc.
 
 sqrtHL:
 ;Written by John Metcalf here http://www.retroprogramming.com/2017/07/a-fast-z80-integer-square-root.html
-;With some comments from Zeda
+;With some changes from Zeda:
+;   Added comments
+;   Optimized a few bytes and ccs
+;   Added an optional block of code at the end to restore the remainder.
 ; fast 16-bit integer square root
 ; 90 bytes, 345-384 cycles (average 365.5)
 
@@ -100,6 +104,11 @@ sq1:
   ld e,a
   inc e
   add hl,de
+#ifdef SQRT_RETURN_REMAINDER
+  jr c,sq0
+  sbc hl,de
+sq0:
+#endif
   sbc a,0
   sra d
   rra
