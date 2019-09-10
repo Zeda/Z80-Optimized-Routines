@@ -3,5 +3,9 @@ pixelTest:
 ;Returns z if the pixel is off, nz if it is on.
 
   call getpixelloc
+  jr nc,+_
   and (hl)
+  ret
+_:
+  xor a   ;or maybe you want to return nz for out-of-bounds?
   ret

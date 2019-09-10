@@ -2,6 +2,7 @@ pixelToggle:
 ;(B,C) is (x,y)
 
   call getpixelloc
+  ret nc            ;Exit if the coordinates are out-of-bounds
   xor (hl)
   ld (hl),a
   ret

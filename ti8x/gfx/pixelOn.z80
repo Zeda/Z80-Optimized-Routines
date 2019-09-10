@@ -2,6 +2,7 @@ pixelOn:
 ;(B,C) is (x,y)
 
   call getpixelloc
+  ret nc            ;Exit if the coordinates are out-of-bounds
   or (hl)
   ld (hl),a
   ret
