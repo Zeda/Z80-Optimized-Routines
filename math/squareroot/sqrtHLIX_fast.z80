@@ -1,18 +1,16 @@
 sqrtHLIX:
 ;Input: HLIX
 ;Output: DE is the sqrt, AHL is the remainder
-;speed: 754+{0,1}+6{0,6}+{0,3+{0,18}}+{0,38}+sqrtHL
-;min: 1130
-;max: 1266
-;avg: 1190.5
-;167 bytes
+;speed: 751+6{0,6}+{0,3+{0,18}}+{0,38}+sqrtHL
+;min: 1103
+;max: 1237
+;avg: 1165.5
+;166 bytes
 
-  call sqrtHL
+  call sqrtHL   ;expects returns A as sqrt, HL as remainder, D = 0
   add a,a
   ld e,a
-  jr nc,+_
-  inc d
-_:
+  rl d
 
   ld a,ixh
   sll e \ rl d
