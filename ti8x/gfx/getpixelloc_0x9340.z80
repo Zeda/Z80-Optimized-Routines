@@ -1,3 +1,6 @@
+pixLUT:
+.db $80,$40,$20,$10,$08,$04,$02,$01
+
 getpixelloc:
 ;Input: (B,C) is (X,Y)
 ;Output: A is the mask, HL is the byte the pixel is on, nc if out-of-bounds
@@ -38,6 +41,3 @@ getpixelloc:
   ld a,(bc)
   scf
   ret
-
-pixLUT:
-  .db $80,$40,$20,$10,$08,$04,$02,$01
