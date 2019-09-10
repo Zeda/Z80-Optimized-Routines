@@ -35,8 +35,8 @@ _:
 _:
 
 ; Now we need to put DE in BC to use mul16
-  ld b,d
-  ld c,e
+  ld b,h
+  ld c,l
   call mul16
 
 ;The result doesn't need the top 4 bits or bottom 12 bits.
@@ -44,12 +44,12 @@ _:
 ;Currently we need to shift DEH left by 4 bits and keep DE, or right by 12 bits and keep HL.
   ld a,h    ;we'll actually be moving the discared bits into A
   and $F0
-  rla \ rl e \ rl d
-  rla \ rl e \ rl d
-  rla \ rl e \ rl d
-  rla \ rl e \ rl d
-  adc a,a
   ex de,hl
+  rla \ adc hl,hl
+  rla \ adc hl,hl
+  rla \ adc hl,hl
+  rla \ adc hl,hl
+  adc a,a
 
 ;if A is non-zero, we have overflow
   jr z,+_
