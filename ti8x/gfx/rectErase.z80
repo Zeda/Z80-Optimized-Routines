@@ -4,15 +4,8 @@ rectErase:
 ;  (B,C) = (x,y) signed
 ;  (D,E) = (w,h) unsigned
 ;  HL points to buf
-    push hl
     call rectSub
-    pop ix
     ret nc
-    ex de,hl
-    add ix,de
-    ex de,hl
-    push ix
-    pop hl
     ld a,d
     cpl
     ld d,a

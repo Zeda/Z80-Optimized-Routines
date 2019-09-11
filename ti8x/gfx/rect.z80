@@ -3,6 +3,7 @@
 rectsub:
 ;(B,C) = (x,y) signed
 ;(D,E) = (w,h) unsigned
+;HL points to the output buffer
 ;Output:
 ;  Start Mask  D
 ;  End Mask    E
@@ -66,7 +67,9 @@ _:
 ;C is starting Y
 ;D is width
 ;E is height
+;HL points to the buffer to draw on
 
+  push hl
   push bc
   ld l,b
   ld a,b
@@ -90,9 +93,17 @@ _:
 _:
   inc a
   ld l,a  ;end mask
+  pop bc
   ex (sp),hl
-  ld a,h
-  ld h,b
+;B,C are coords
+;HL is the output buff
+  ex de,hl
+  push hl
+
+  ld a,b
+  ld h,0
+  ld b,h
+  ld l,c
   add hl,hl
   add hl,bc
   add hl,hl
@@ -106,6 +117,8 @@ _:
   ld l,a
   jr nc,$+3
   inc h
+  add hl,de
+  pop de
 
 ;B is the starting x, D is width
 ;Only A,B,D,E are available
@@ -125,6 +138,7 @@ _:
   ld b,a
   ld c,e
   pop de
+
   scf
   ret
 #endif

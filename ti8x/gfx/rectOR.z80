@@ -4,15 +4,8 @@ rectOR:
 ;  (B,C) = (x,y) signed
 ;  (D,E) = (w,h) unsigned
 ;  HL points to buf
-    push hl
     call rectSub
-    pop ix
     ret nc
-    ex de,hl
-    add ix,de
-    ex de,hl
-    push ix
-    pop hl
     dec b
     jp m,orrect0
     inc b
