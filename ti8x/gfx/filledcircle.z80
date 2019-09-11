@@ -44,12 +44,11 @@ _:
   call fillcircle_plot
   add a,e
   dec e
-  jr z,+_
+  ret z
   dec e
   jr nc,-_
   jp filledcircleloop
-_:
-  ret
+
 fillcircle_plot:
   inc h
   dec h
