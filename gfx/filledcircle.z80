@@ -1,0 +1,86 @@
+;Written by Zeda Thomas, free to use.
+
+;This draws the fill of a circle centered at 8-bit coordinates and with radius
+;up to 127.
+;IX points to a `horizontal line` routine that takes E=x, A=y, D=width as input
+;and does something with it, like plot a horizontal line.
+;
+; For example, on the ti-83+/84+/SE calculators, you might have:
+;     horizontal_line:
+;       ld b,e
+;       ld c,a
+;       ld e,1
+;       ld hl,gbuf
+;       jp rectOR
+
+; Required subroutines:
+;     call_ix:
+;       jp (ix)
+
+filledcircle:
+;Input:
+; (B,C) is the center (x,y)
+; D is the radius, unsigned, less than 128 (0 or greater than 128 just quits).
+; IX points to a `plot` routine that takes (B,C)=(x,y) as input.
+  ld a,d
+  add a,a
+  ret c
+  ret z
+  ld l,d
+  dec a
+  ld e,a
+  xor a
+  ld h,-1
+  ld d,1
+filledcircleloop:
+  ; call c,fillcircle_plot
+  inc h
+  sub d
+  inc d
+  inc d
+  jr nc,filledcircleloop
+_:
+  dec l
+  call fillcircle_plot
+  add a,e
+  dec e
+  jr z,+_
+  dec e
+  jr nc,-_
+  jp filledcircleloop
+_:
+  ret
+fillcircle_plot:
+  inc h
+  dec h
+  ret z
+  push hl
+  push de
+  push bc
+  push af
+  dec h
+  ld a,b
+  sub h
+  ld e,a
+  ld d,h
+  sll d   ;aka `slia`, undocumented
+
+  ld a,l
+  or a
+  ld h,c
+  jr z,+_
+  add a,h
+  push de
+  push hl
+  call nz,call_ix
+  pop hl
+  pop de
+_:
+  ld a,h
+  sub l
+  call call_ix
+  pop af
+  pop bc
+  pop de
+  pop hl
+  ret
