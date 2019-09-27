@@ -1,0 +1,204 @@
+;Written by Zeda Thomas, free to use.
+;NOTE: This uses SMC and undocumented instructions!
+
+
+fastline:
+;Input:
+; (H,L) is (x0,y0)
+; (D,E) is (x1,y1)
+;This draws a clipped line from (x0,y0) to (x1,y1), signed coordinates.
+
+;We'll reorganize so that x1-x0<=128
+;This makes it so we'll always be incrementing X
+;Get the width, |x1-x0|
+  ld a,d
+  sub h
+  jp p,+_
+  neg
+  ex de,hl
+_:
+  ld d,a    ;width
+
+
+;Now get the height, |y1-y0|, and increment direction, sign(y1-y0)
+  ld a,e
+  sub l
+  jp p,+_
+  neg
+  .db $FE
+_:
+  or a
+  ld e,a    ;height
+
+;Now let's create a switch that determines if Y is incremented or decremented.
+  ld a,$6E
+  rra
+  ;A is $37 if incrementing down, $B7 if incrementing up
+  ;These correspond to `scf` and `or a`, respectively
+  ld (line_switch),a
+
+;now if L needs to be decremented and L>=128, need to treat L as positive
+;    if L needs to be decremented and L<128, need to treat L as positive
+;    if L needs to be incremented and L>=128, need to treat L as negative
+;    if L needs to be incremented and L<128, need to treat L as positive
+;if (~A&L)>=128, set B to -1, else 0
+  cpl
+  and l
+  add a,a
+  sbc a,a
+  ld b,a
+
+;now D width, E is height, H is x0, L is y0
+
+
+;let's calculate the location and mask of the first point
+;This is allowed to be off screen! Need to use signed math
+  push hl
+  pop ix
+  ld c,l
+  ld a,h
+  ld h,b
+;now HL and BC are the same, with the sign extended through 16 bits
+  add hl,hl
+  add hl,bc
+  add hl,hl
+  add hl,hl
+  ;now we need to add in A/8 to HL
+  ld c,a
+  add a,a
+  sbc a,a
+  ld b,a
+  ld a,c
+  sra c     ;signed divide by 8
+  sra c
+  sra c
+  add hl,bc
+  ld bc,gbuf
+  add hl,bc
+
+;HL points to where the first pixel is written
+
+;Now generate the set bit command
+;set imm3,(hl) == 11001011 : 11[imm3]110
+  cpl
+  add a,a
+  add a,a
+  add a,a
+  or %11000110
+;Save the set bit command
+  ld (line_pixel),a
+
+;IXH is x0
+;IXL is y0
+;D is width
+;E is height
+
+  ld a,d
+  cp e
+  jr nc,line_vert
+  ld b,e
+  inc b
+  ld a,e
+  cpl
+  rra
+  ld c,a
+  or a
+
+_:
+  call c,line_x
+  call lineplot
+  call line_y_incdec
+  djnz -_
+  ret
+
+
+
+line_vert:
+;marches across faster than up/down
+;D>E
+  inc a
+  ld b,a
+  rra
+  ld c,a
+  or a
+_:
+  call c,line_y_incdec
+  call lineplot
+  call line_x
+  djnz -_
+  ret
+
+line_x:
+;Now we need to increment the mask and ptr
+;given HL is already the ptr
+  ld a,(line_pixel)
+  sub $C8
+  jr nc,+_
+  inc hl
+_:
+  or $C0
+  ld (line_pixel),a
+
+;increment the x coordinate
+  inc ixh
+
+;subtract the height from acc
+  ld a,c
+  sub e
+  ld c,a
+  ret
+
+lineplot:
+;(IXH,IXL) is (x,y)
+;returns HL as the gbuf ptr
+;carry set means we should skip plotting
+  ld a,ixh
+  cp 96
+  ret nc
+  ld a,ixl
+  cp 64
+  ret nc
+
+;11001011 : 11[imm3]110
+  .db $CB   ;start of bit comands
+line_pixel:
+  .db 0
+  ret
+
+line_y_incdec:
+  ld a,l
+line_switch:
+  nop     ;this gets changed to `or a` or `scf`
+  jr c,+_
+;now decrement the gbuf ptr
+  sub a,12
+  ld l,a
+  jr nc,$+3
+  dec h
+
+;Now increment the x coordinate
+  dec ixl
+
+;add the width to acc
+  ld a,c
+  add a,d
+  ld c,a
+  ret
+
+_:
+;now increment the gbuf ptr
+  add a,12
+  ld l,a
+  jr nc,$+3
+  inc h
+
+;Now increment the x coordinate
+  inc ixl
+
+;add the width to acc
+  ld a,c
+  add a,d
+  ld c,a
+  ret
+
+.echo $-fastline
