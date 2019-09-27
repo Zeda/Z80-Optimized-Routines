@@ -1,7 +1,7 @@
 H_Times_E:
 mul8:
 ;Inputs: H,E
-;Outputs: HL is the product
+;Outputs: HL is the product, D is 0
 ;190+6{0,6}+{0,15}+{0,1}
 ;min: 190cc
 ;max: 242
