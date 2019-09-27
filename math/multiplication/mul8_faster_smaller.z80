@@ -1,0 +1,23 @@
+H_Times_E:
+mul8:
+;Inputs: H,E
+;Outputs: HL is the product, D is 0
+;Destroys: A
+;188+6{0,6}+{0,15}
+;min: 188cc
+;max: 239cc
+;avg: 213.5cc
+;35 bytes
+    xor a
+    ld d,a
+    sla h
+    sbc a,a
+    and e
+    ld l,a
+    add hl,hl \ jr nc,$+3 \ add hl,de
+    add hl,hl \ jr nc,$+3 \ add hl,de
+    add hl,hl \ jr nc,$+3 \ add hl,de
+    add hl,hl \ jr nc,$+3 \ add hl,de
+    add hl,hl \ jr nc,$+3 \ add hl,de
+    add hl,hl \ jr nc,$+3 \ add hl,de
+    add hl,hl \ ret nc \ add hl,de \ ret
