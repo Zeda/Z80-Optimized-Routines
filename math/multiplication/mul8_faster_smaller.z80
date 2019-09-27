@@ -3,13 +3,12 @@ mul8:
 ;Inputs: H,E
 ;Outputs: HL is the product, D is 0
 ;Destroys: A
-;188+6{0,6}+{0,15}
-;min: 188cc
-;max: 239cc
-;avg: 213.5cc
+;187+6{0,6}+{0,15}
+;min: 187cc
+;max: 238cc
+;avg: 212.5cc
 ;35 bytes
-    xor a
-    ld d,a
+    ld d,0
     sla h
     sbc a,a
     and e
