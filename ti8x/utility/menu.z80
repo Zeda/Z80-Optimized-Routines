@@ -83,7 +83,7 @@ menu:
 ;
 ;   The get/select code is passed the following information:
 ;       A is the index of the current title (0 is the first, 1 is the second, etc.)
-;       HL is the index of the currently highlighted item
+;       BC is the index of the currently highlighted item
 ;       carry flag is reset if it needs to return a pointer to the string for the element
 ;           Return carry flag as set if the element is out-of-bounds.
 ;       carry flag is set if it needs to return a pointer to the data for the element
@@ -187,7 +187,7 @@ _:
   jr z,-_
   cp 9
   scf
-  jr z,menu_get_select
+  jr z,menu_select
   cp 15
   jr z,menu_get_select_err
 
@@ -195,6 +195,8 @@ _:
   jr c,menu_render_0
   jr menu_render
 
+menu_select:
+  ld bc,(menucur)
 menu_get_select:
   ld hl,(menucallptr)
   ld a,(menuheader_cur)
@@ -219,7 +221,7 @@ menu_render_sub:
 menu_render_sub_loop:
   push bc
   call menu_get_select
-  pop bc
+  jr c,menu_render_sub_loop_done
   ret c
   ld de,(textcoord)
   push de
@@ -249,6 +251,8 @@ menu_render_sub_loop:
   cp e
 #endif
   ld (textcoord),de
+menu_render_sub_loop_done:
+  pop bc
   inc bc
   jr nc,menu_render_sub_loop
   ret
