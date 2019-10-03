@@ -96,9 +96,10 @@ _:
   ld a,d
   cp e
   jr nc,line_vert
+  ld b,e
+  inc b
   ld a,e
-  inc a
-  ld b,a
+  cpl
   rra
   ld c,a
   or a
