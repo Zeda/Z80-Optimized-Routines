@@ -1,0 +1,94 @@
+;This draws a line from (x0,y0) to (x1,y1), signed coordinates.
+;
+; Required subroutines:
+;     call_ix:
+;       jp (ix)
+
+line:
+;Inputs:
+;   (H,L) is (x0,y0)
+;   (D,E) is (x1,y1)
+;   IX points to the pixel plotting routine
+;     Takes coordinates, (D,E) = (x,y) and plots the point.
+;     preserves HL,DE,BC,A,IX
+
+;Destroys:
+;   AF,BC,DE,HL
+; LICENSING NOTE:
+;     This code is (heavily) modified from Axe's open source code.
+;     There are structural similarities, but the majority of it is rewritten
+;     to be platform independent.
+;71 bytes
+
+  ld a,d
+	sub h
+	jp p,+_
+	ex de,hl
+	neg
+_:
+
+  push hl   ;Save the coordinates
+
+  ld c,a
+	ld a,l
+  ld l,c
+	sub e
+
+  ld c,0
+	jp p,+_
+	dec c
+	neg
+_:
+
+	ld h,a     ; H=DY, L=DX
+	cp l
+	jr nc,+_
+	ld a,l
+_:
+
+  pop de    ;restore coordinates
+	ld b,a    ; Pixel counter
+	inc b
+	cp h
+
+;want to preserve Z
+
+	jr nz,__LineH   ; Line is rather horizontal than vertical
+  ;divide A by 2, given carry is reset
+  rra
+__LineVLoop:
+  call call_ix    ;plot
+  rlc c
+  jr nc,+_
+  inc e
+  .db $FE
+_:
+  dec e
+	sub	l			; Handling gradient
+	jr	nc,+_
+  inc d
+	add	a,h
+_:
+	djnz __LineVLoop
+	ret
+
+__LineH:
+  ;divide A by 2, given carry is set
+	or a
+	rra
+
+__LineHLoop:
+  call call_ix    ;plot
+	inc	d
+	sub	h           ; Handling gradient
+	jr nc,__LineHNext
+  rlc c
+  jr nc,+_
+  inc e
+  .db $FE
+_:
+  dec e
+	add	a,l
+__LineHNext:
+	djnz __LineHLoop
+	ret
