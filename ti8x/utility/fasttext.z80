@@ -3,22 +3,26 @@
 ;Created by E37
 ;      Fast Small Font Text
 ;
-;This is faster than most custom small font text routines because it cuts out the need of using B_CALL _Load_SFont
-;According to my tests, it is about 3x faster than the OS's display routine
-;It isn't a drop in replacement for the OS's text routine since it has different behavior in a couple edge cases
-;Unlike the OS's text routine, this always draws to a buffer. It also ignores any font hooks
-;All text flags like inverse and erase behind are ignored
-;By default it uses part of lFont_record as its storage memory. It will need to reload if you display anything in large font
-;The reload is automatic and you shouldn't worry about it
+;This is faster than most custom small font text routines because it cuts out
+;the need of using B_CALL _Load_SFont. According to my tests, it is about 3x
+;faster than the OS's display routine. It isn't a drop in replacement for the
+;OS's text routine since it has different behavior in a couple edge cases.
+;Unlike the OS's text routine, this always draws to a buffer. It also ignores
+;any font hooks. All text flags like inverse and erase behind are ignored
+;By default it uses part of lFont_record as its storage memory. It will need to
+;reload if you display anything in large font. The reload is automatic and you
+;shouldn't worry about it.
 ;
 ;
 ;Using a custom font
-;Custom font does not affect the speed at all
-;To use a custom font, set (text_temp_RAM) to the address and (text_temp_RAM + 6) to the page
-;The table should be in the same format as the OS's small font table which is an 8 byte structure
-;The first byte is the length and the next 7 bytes are the sprite
-;You need to call get_sFont_custom once before setting the custom font so it can load. You DO NOT need to call it if you are not using a custom font
-;You will also need reset the custom font pointers every time you display something in large font
+;Custom font does not affect the speed at all. To use a custom font, set
+;(text_temp_RAM) to the address and(text_temp_RAM + 6) to the page. The table
+;should be in the same format as the OS's small font table which is an 8 byte
+;structure. The first byte is the length and the next 7 bytes are the sprite
+;You need to call get_sFont_custom once before setting the custom font so it can
+;load. You DO NOT need to call it if you are not using a custom font. You will
+;also need reset the custom font pointers every time you display something in
+;large font
 
 
 fasttext:
