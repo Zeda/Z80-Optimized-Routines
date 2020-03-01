@@ -1,0 +1,51 @@
+; This is used to find vars like strings, pic vars, and others in the VAT that don't have custom names.
+
+findSym:
+;name is in OP1, the type byte is ignored
+    ld de,8479h
+
+FindVarSymAtDE:
+;DE points to the symbol's name (2 bytes)
+    ex de,hl
+
+FindVarSymAtHL:
+;HL points to the symbol's name (2 bytes)
+    ld c,(hl)
+    inc hl
+    ld b,(hl)
+
+SearchVarBC:
+;BC is the 2-byte name. For example, for 0xAA00 (Str1), BC== 0x00AA
+    ld hl,$FE60
+ SearchVarBC_loop:
+    ld a,c
+    cp (hl)
+    dec hl
+    jr nz,SearchVarBC_next
+    ld a,b
+    cp (hl)
+    jr z,SearchVarBC_found
+SearchVarBC_next:
+    ld de,$FFF8
+    add hl,de
+    ex de,hl
+    ld hl,(9830h)
+    sbc hl,de
+    ex de,hl
+    ld d,a
+    or a
+    ccf
+    jr nz, SearchVarBC_loop
+SearchVarBC_found:
+    inc hl
+    inc hl
+    ld b,(hl)
+    inc hl
+    ld d,(hl)
+    inc hl
+    ld e,(hl)
+    inc hl
+    inc hl
+    inc hl
+    ld a,(hl)
+    ret
