@@ -13,6 +13,8 @@ uint32tostr:
 ;     C is the base
 ;     DEHL is the number to display
 ;     IX points to the end of the output location
+;       NOTE: If you want the string to be null-terminated, you'll have to
+;             write a 0 to IX yourself.
 ;Outputs:
 ;     A, B, D, E is 0
 ;     C is not changed
