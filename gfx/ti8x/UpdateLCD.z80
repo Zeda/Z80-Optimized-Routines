@@ -1,18 +1,7 @@
-;**NOTE:** (1 March 2020)
-;   It seems in the past year or two, some calculators' LCDs don't report status
-;   correctly, so this routine might not work for them! The crude workaround is
-;   to put a long-ish delay where you see:
-;       in a,(16) \ rla \ jr c,$-3
-;   For example:
-;       call LCD_BUSY_QUICK
-
-
 #ifndef included_UpdateLCD
 #define included_UpdateLCD
 
 UpdateLCD:
-;This copies the contents of gbuf to the LCD.
-;Preserves all registers.
   push hl
   push de
   push bc
