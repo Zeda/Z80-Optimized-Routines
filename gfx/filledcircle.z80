@@ -21,7 +21,7 @@ filledcircle:
 ;Input:
 ; (B,C) is the center (x,y)
 ; D is the radius, unsigned, less than 128 (0 or greater than 128 just quits).
-; IX points to a `plot` routine that takes (B,C)=(x,y) as input.
+; IX points to a `plot` routine that takes (E,A,D)=(x,y,width) as input.
   ld a,d
   add a,a
   ret c
@@ -62,7 +62,12 @@ fillcircle_plot:
   sub h
   ld e,a
   ld d,h
+#ifdef ALLOW_UNDOCUMENTED
   sll d   ;aka `slia`, undocumented
+#else
+  scf
+  rl d
+#endif
 
   ld a,l
   or a
