@@ -1,5 +1,8 @@
 ;This routine has four useful entry points, especially findSymBC!
 
+#ifndef included_FindSym
+#define included_FindSym
+
 FindSym:
 ;Inputs:
 ;     OP1+1 contains the name of a symbol var. No type byte needed.
@@ -62,3 +65,5 @@ Sym_Entry_found:
   ld a,(hl)
   ld c,3
   ret
+
+#endif

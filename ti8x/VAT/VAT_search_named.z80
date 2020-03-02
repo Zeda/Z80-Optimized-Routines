@@ -1,0 +1,149 @@
+;this is used to find named vars like programs and appvars
+
+
+#ifndef included_VAT_search
+#define included_VAT_search
+
+VAT_search:
+;Inputs:
+;     OP1 contains the var name to search for
+;Outputs:
+;     A is the type
+;     B is the flashpage
+;     C is the name length
+;     DE points to the size bytes
+;     HL points to the symentry
+;Notes:
+;     Use to search programs, appvar, groups
+     ld de,OP1	;OP1
+VAT_search_DE:
+; DE points to the name of the var to find
+  ex de,hl
+
+VAT_search_HL:
+; HL points to the name of the var to find
+
+  inc hl
+  xor a
+  ld c,a
+  ld b,a
+  cpir
+  dec hl
+  dec hl
+  ld a,(hl)
+  add hl,bc
+  inc hl
+  inc hl
+  ex de,hl
+  cp $5D
+  jr nz,+_
+  dec c
+_:
+
+  ld a,(de)
+  cp $5D
+  dec de
+  jr nz,+_
+  dec c
+_:
+
+  ld a,-1
+  sub c
+  ld (OP2-1),a
+
+  ld hl,(progPtr)
+
+;DE points to the name
+  jr CompareLoop_start
+CompareLoop:
+  add hl,bc
+  ld bc,-6
+;match type 5,6,22 as the same
+; (prog, protprog, tempprog)
+  ld a,(de)
+  and $1F
+  cp 5
+  jr z,chk_find_sym_prog
+  cp 6
+  jr z,chk_find_sym_prog
+  cp 22
+  jr nz,chk_find_sym_non_prog
+chk_find_sym_prog:
+  ld a,(hl)
+  and $1F
+  cp 5
+  jr z,type_match
+  cp 6
+  jr z,type_match
+  cp 22
+  jr z,type_match
+  jr type_nomatch
+
+chk_find_sym_non_prog:
+;match 01 as 0D (list, complex list)
+  xor (hl)
+  and 1Fh
+  jr z,type_match
+  cp 12
+  jr nz,type_nomatch
+  xor (hl)
+  and $1F
+  dec a
+  jr z,type_match
+  cp 12
+  jr z,type_match
+
+type_nomatch:
+  add hl,bc
+  ld c,(hl)
+  inc c
+  inc b
+  .db $FE
+ChkFindSym_not_match_pop_de:
+  pop de
+ChkFindSym_not_match:
+  or a
+  sbc hl,bc
+
+CompareLoop_start:
+  ld bc,(pTemp)
+;  or a
+  sbc hl,bc
+  jr nz,CompareLoop
+  scf
+  ret
+
+type_match:
+  add hl,bc
+  ld a,(OP2-1)
+  ld c,(hl)
+  dec hl
+  inc b
+  cp c
+  jr nz,ChkFindSym_not_match
+  push de
+CompareName:
+  inc de
+  ld a,(de)
+  cpd
+  jr nz,ChkFindSym_not_match_pop_de
+  jp pe,CompareName
+  pop de
+  ld a,(OP2-1)
+  ld c,a
+  inc c
+  inc c
+  add hl,bc   ;resets the carry flag
+  ld c,a
+  ld b,(hl)
+  inc hl
+  ld d,(hl)
+  inc hl
+  ld e,(hl)
+  inc hl
+  inc hl
+  inc hl
+  ld a,(hl)
+  ret
+
+#endif

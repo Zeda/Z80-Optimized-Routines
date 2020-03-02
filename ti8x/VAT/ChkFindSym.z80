@@ -1,0 +1,25 @@
+; This can be used to replace TI-OS' _ChkFindSym
+
+#ifndef included_ChkFindSym
+#define included_ChkFindSym
+
+#include "ti8x/VAT/VAT_search_named.z80"
+#include "ti8x/VAT/findsym.z80"
+
+ChkFindSym:
+  ld de,OP1
+ChkFindSym_DE:
+  ex de,hl
+ChkFindSym_HL:
+  ld a,(hl)
+  and $1F
+  dec a \ jp z,VAT_search_HL
+  sub 4 \ jp z,VAT_search_HL
+  dec a \ jp z,VAT_search_HL
+  cp 7 \ jp z,VAT_search_HL
+  sub 15
+  cp 3 \ jp c,VAT_search_HL
+  inc hl
+  jp FindVarSymHL
+
+#endif
