@@ -1,0 +1,244 @@
+;this is used to sort the VAT
+;This uses an adaptive Insertion Sort, so it is very fast on a VAT that is
+;already fairly sorted. This means the first sort is usually slower, then
+;subsequent sorts are very fast. Even the first sort is quite fast.
+
+;If you want this routine to use speed optimizations, make sure to
+;   #define speed
+
+;uses 19 bytes of RAM, 4 bytes of stack space
+#define tmp OP1+14
+#define head tmp+1
+#define head_lag tmp+3
+#macro advanceVAT()
+#ifdef speed
+;17cc saved per iteration
+;8 bytes vs a 3 byte call (but no 8-byte subroutine)
+  ld bc,-6
+  add hl,bc
+  sbc a,a   ;HL<=FE66, so carry flag is set
+  sub (hl)
+  ld c,a
+  add hl,bc
+#else
+  call advance_VAT    ;preserves DE
+#endif
+#endmacro
+
+
+sortVAT:
+  ld hl,(progPtr)
+isort_main:
+_:
+  ld (head_lag),hl
+  ld d,h
+  ld e,l
+  advanceVAT()
+  ld (head),hl
+#ifdef speed
+;11 bytes, 29cc or 46cc. avg=29.06640625cc
+  ld a,(pTemp)
+  cp l
+  jr nz,$+7
+  ld a,(pTemp+1)
+  cp h
+  ret z
+#else
+;adds 8 bytes, 55cc
+  ld bc,(pTemp) ;Need to verify that we haven't reached the end of the progVAT
+  or a          ;
+  sbc hl,bc     ;
+  ret z         ;
+  add hl,bc     ;
+#endif
+  call cmpVAT
+  ld hl,(head)
+  jr nc,-_
+;if it makes it here, then (head) needs to be inserted into the previous part of
+;the VAT. We might be able to speed it up a little more if we also grab the next
+;element.
+;  If (head_advance) is bigger than (head), then no need to start the search
+;from the beginning
+  ld de,tmp
+#ifdef speed
+  ldd
+  ldd
+  ldd
+  ldd
+  ldd
+  ldd
+  ld b,0
+  ld c,(hl)
+  lddr
+  ldd
+#else
+  ld bc,6
+  lddr
+  ld c,(hl)
+  inc c
+  lddr
+#endif
+  ld hl,(progPtr)
+_:
+  push hl
+#ifdef speed
+;+5 bytes, -11cc
+  ld bc,-6
+  add hl,bc
+  ld de,tmp-6
+  call cmpVAT_stepin
+#else
+  ex de,hl
+  ld hl,tmp
+  call cmpVAT
+#endif
+  pop hl
+  jr c,+_
+  advanceVAT()
+  jp -_
+_:
+;HL is where to insert
+  ld de,(head)
+  or a
+  sbc hl,de
+  ld b,h
+  ld c,l
+  ld hl,-6
+  add hl,de
+  ld a,l
+  sub a,(hl)
+  ld l,a
+  jr nc,$+4
+  dec h
+  or a
+  inc de
+  ex de,hl
+#ifdef speed
+  call fastldir
+#else
+  ldir
+#endif
+  ;begin at DE, copy tmp. First need size of tmp
+  ld hl,tmp-6
+  ld c,(hl)
+  sbc hl,bc
+  ld a,c
+  ldir
+#ifdef speed
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+  ldi
+  add a,7
+#else
+  ld c,7
+  add a,c
+  ldir
+#endif
+  ld hl,(head_lag)
+  ld c,a
+  ld a,l
+  sub c
+  ld l,a
+  jp nc,isort_main
+  dec h
+  jp isort_main
+#ifndef speed
+advance_VAT:
+  ld bc,-6
+  add hl,bc
+  sbc a,a   ;HL<=FE66, so carry flag is set
+  sub (hl)
+  ld c,a
+  add hl,bc
+  ret
+#endif
+cmpVAT:
+;if @HL>=@DE, return nc
+  ld bc,-6
+  add hl,bc
+  ex de,hl
+  add hl,bc
+cmpVAT_stepin:
+  ld a,(de)
+  cp (hl)
+  jr nc,first_longer
+;the second name is longer.
+  ld c,a
+_:
+  dec hl
+  dec de
+  ld a,(de)
+  cp (hl)
+  ret nz
+  dec c
+  jr nz,-_
+  scf
+  ret
+first_longer:
+;the first name is longer, so load c with the size of the second name
+  ld c,(hl)
+_:
+  dec hl
+  dec de
+  ld a,(de)
+  cp (hl)
+  ret nz
+  dec c
+  jr nz,-_
+  ret
+#ifdef speed
+fastldir:
+;copy BC bytes from HL to DE
+;copy BC bytes from HL to DE
+;breaks even at 26 bytes
+; 5% faster than LDIR with 35 bytes
+;10% faster than LDIR with 48 bytes
+;15% faster than LDIR with 91 bytes
+;20% faster than LDIR with 635 bytes
+;max is ~ 20.8% faster than LDIR
+;Cost: 104+16N+10ceiling(N/16)
+    push hl
+;    push af
+    xor a
+    sub c
+    and 15               ;change to n-1
+    add a,a
+    ld hl,ldirloop
+    add a,l
+    ld l,a
+#if (ldirloop>>8)!=(_ldirloop_end>>8)
+    jr nc,$+3  ;these aren't needed if the ldirloop doesn't cross a 256 byte boundary. Can save 12cc on the above timings and 3 bytes.
+    inc h       ;
+#endif
+;    pop af
+    ex (sp),hl
+    ret
+ldirloop:
+;n=16, (number of LDI instructions, use qty of 4,8,16,32,64)
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+    ldi
+_ldirloop_end:
+    ldi
+    jp pe,ldirloop
+    ret
+#endif
+#undefine tmp
+#undefine head
+#undefine head_lag1
