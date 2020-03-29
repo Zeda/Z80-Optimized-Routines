@@ -1,0 +1,142 @@
+; This routine requires the following subroutine:
+;     call_ix:
+;         jp (ix)
+;
+; To use SMC, define SMC.
+;     #define SMC
+;
+; If you are not using SMC, you'll need to `arraylen` to point
+;to 2 bytes of scrap RAM
+
+heapsort:
+;Inputs:
+;   BC is the size of the array.
+;   IX points to the routine that compares or swpas two entries
+;     HL is the index of the first element
+;     DE is the index of the second element
+;     c means swap
+;     nc means compare HL to DE
+;       Should return:
+;         z if they are equal
+;         nc if HL>=DE
+;         c if HL<DE
+;Outputs:
+;   The data is sorted.
+;Destroys:
+;   All
+;Notes:
+;   You can make the comparison routine work any way that you want :)
+;   For example, you can invert the carry flag output to sort descending.
+
+;If the array is size 0 or 1, then it is sorted
+    inc b
+    dec b
+    jr nz,heapsort_heapify
+    dec c
+    ret z
+    inc c
+    ret z
+
+heapsort_heapify:
+    call heapify
+    ld hl,(arraylen)
+heapsort_loop:
+    dec hl
+    ld (arraylen),hl
+    push hl
+;HL is the last element
+    ld de,0
+    call heapsort_swap
+    ld bc,1
+    call propogate
+    pop hl
+    ld a,h
+    or l
+    jr nz,heapsort_loop
+    ret
+
+heapify:
+;Inputs:
+;   HL points to the array data
+;   BC is the size of the array. NOT GREATER THAN 32767
+;   IX points to the routine that compares the values
+    ld (arraylen),bc
+    srl b
+    rr c
+_:
+    push bc
+    call propogate
+    pop bc
+    dec bc
+    ld a,b
+    or c
+    jr nz,-_
+    ret
+
+propogate:
+;BC-1 is the parent index
+;2BC-1 is the child0 index
+;2BC is the child1 index
+    sla c
+    rl b
+    ld d,b
+    ld e,c
+
+#ifdef SMC
+arraylen=$+1
+    ld hl,0
+#else
+    ld hl,(arraylen)
+#endif
+
+    sbc hl,de
+    add hl,de
+    ret c  ;no children
+;z means one child
+;compare the two children
+    ld h,b
+    ld l,c
+    dec hl
+;HL is the child0 index
+;DE is the child1 index
+    call nz,heapsort_cmp
+    jr nc,+_
+    ex de,hl
+_:
+
+;parent is (HL+1)>>1
+;child is HL
+    ld d,h
+    ld e,l
+    inc hl
+    srl h
+    rr l
+    dec hl
+    call heapsort_cmp
+    ret nc
+    call heapsort_swap
+
+;values heapsort_swapped, now set parent=child+1
+    ld b,d
+    ld c,e
+    inc bc
+    jr propogate
+
+heapsort_swap:
+;HL and DE are the indices of the elements to heapsort_swap
+    push hl
+    push de
+    scf
+    call call_ix
+    pop de
+    pop hl
+    ret
+
+heapsort_cmp:
+    push hl
+    push de
+    or a
+    call call_ix
+    pop de
+    pop hl
+    ret
