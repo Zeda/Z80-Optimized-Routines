@@ -1,10 +1,10 @@
 "I learned these from calc84maniac:"
 
 Compare HL to DE:
-    or a
-    sbc hl,de
-    add hl,de
-
+    or a                            ;    4
+    sbc hl,de                   ;  15
+    add hl,de                   ;  11
+                                    ;  = 30 cycles    
 
 Compare HL to BC:
     or a
@@ -13,3 +13,26 @@ Compare HL to BC:
 
 
 "These have similar flags to that of the `cp` instruction. At the very least, you get the zero and carry flag identical."
+
+"suggestions from grosged:"
+
+Compare HL to DE: ( A altered )
+    ld  a,h                 ;  4
+    cp d                    ;  4
+    jr nz,NotEqual   ; 12/7
+    ld a,l                    ;  4
+    cp e                    ;   4
+    NotEqual:          ; =20/23 cycles
+    
+    Compare HL to BC: ( A altered )
+    ld  a,h                 ;  4
+    cp b                    ;  4
+    jr nz,NotEqual   ; 12/7
+    ld a,l                    ;  4
+    cp c                    ;   4
+    NotEqual:          ; =20/23 cycles
+    
+
+
+
+
