@@ -2,7 +2,7 @@
 ;author: calcmaniac84
 
 reverseHL:
-;28 bytes and 112 cycles
+;28 bytes and 112 cycles (with RET: 29 bytes, 122cc)
   ld a,l
   rla
   rr h
