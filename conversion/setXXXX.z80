@@ -18,34 +18,33 @@ setXXXX:
     xor a
 #ifdef fast
     ld (de),a   ;first, I am zeroing out the 9 bytes
-    inc de
-    push de
+    inc e
+    ld  b,e
+    inc e
+    ld (de),a
+    inc e
+    ld (de),a
+    inc e
+    ld (de),a
+    inc e
+    ld (de),a
+    inc e
+    ld (de),a
+    inc e
+    ld (de),a
+    inc e
+    ld (de),a
+    ld e,b
     ld a,80h
     ld (de),a
-    xor a
-    inc de
-    ld (de),a
-    inc de
-    ld (de),a
-    inc de
-    ld (de),a
-    inc de
-    ld (de),a
-    inc de
-    ld (de),a
-    inc de
-    ld (de),a
-    inc de
-    ld (de),a
-    pop de
 #else
-    push de
+    ld c,e
     ld b,9
     ld (de),a   ;first, I am zeroing out the 9 bytes
-    inc de
+    inc e
     djnz $-2
-    pop de
-    inc de
+    ld e,c
+    inc e
     ld a,80h
     ld (de),a
 #endif
