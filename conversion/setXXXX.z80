@@ -60,13 +60,12 @@ setXXXX:
     ld a,d
     or a
     jr nz,+_
-    ld d,e
+    ld d,e      ; here, a=0
     ld e,c
     ld c,a
     dec b
     dec b
-    ld a,d
-    or a
+    or d
     jr nz,+_
     ld d,e
     ld e,c
