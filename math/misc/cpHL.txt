@@ -14,7 +14,7 @@ Compare HL to BC:
 
 "These have similar flags to that of the `cp` instruction. At the very least, you get the zero and carry flag identical."
 
-"suggestion from grosged:"
+Other suggestion:
 
 Compare HL to DE: ( A altered )
     ld  a,h                 ;  4
