@@ -1,0 +1,54 @@
+rand_TI_Float:
+;Generates a random TI float at HL
+  push hl
+  call rand_init
+  ld de,$8000   ;D is exponent, E is type
+get_rand_exponent_loop:
+;decrement exponent
+  dec d
+
+;if the exponent is -100, underflow to 0.
+;I don't think this is possible with this RNG, or even likely to ever happen
+;before the universe's heat death with a true RNG, but better to be safe?
+  ld a,d
+  cp 28
+  jp z,SetAnsZero
+
+;save the exponent
+  push de
+
+;Generate a uniform random digit on [0,9] as a candidate for our first digit.
+  call rand10
+
+;restore the exponent+type
+  pop de
+;if A is 0, we'll decrement the exponent and find a new candidate for the first
+;digit. This is because we need our float to be "normalized" (top digit non-zero)
+;This also preserves the uniform distribution for values.
+  jr z,get_rand_exponent_loop
+  pop hl
+  ld (hl),e
+  inc hl
+  ld (hl),d
+  inc hl
+
+;write the first digit
+  ld (hl),a
+  ld b,13
+math_rand_loop:
+;now generate subsequent digits
+  push bc
+  rr b
+  ld a,l
+  sbc a,255
+  ld l,a
+  push hl
+
+;generate the next digit
+  call rand10
+
+  pop hl
+  rld
+  pop bc
+  djnz math_rand_loop
+  ret
