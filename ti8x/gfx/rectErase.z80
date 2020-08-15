@@ -18,10 +18,9 @@ rectErase:
 erase_rect_loop:
     push bc
     push hl
-    ld a,(hl) \ and d \ ld (hl),a \ inc hl
-    dec b
-    jr z,$+7
+    ld a,(hl) \ and d \ ld (hl),a
     xor a
+    .db $FE ;sart of `cp *` to skip the folowing byte
     ld (hl),a \ inc hl \ djnz $-2
     ld a,(hl) \ and e \ ld (hl),a
     ld bc,12

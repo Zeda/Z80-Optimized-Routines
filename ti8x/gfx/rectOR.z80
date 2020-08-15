@@ -12,11 +12,10 @@ rectOR:
 or_rect_loop:
     push bc
     push hl
-    ld a,(hl) \ or d \ ld (hl),a \ inc hl
-    dec b
-    jr z,$+8
-    ld c,-1
-    ld (hl),c \ inc hl \ djnz $-2
+    ld a,(hl) \ or d \ ld (hl),a
+    ld a,-1
+    .db $FE ;sart of `cp *` to skip the folowing byte
+    ld (hl),a \ inc hl \ djnz $-2
     ld a,(hl) \ or e \ ld (hl),a
     ld bc,12
     pop hl

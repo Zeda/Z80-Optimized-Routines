@@ -12,9 +12,8 @@ rectXOR:
 xor_rect_loop:
     push bc
     push hl
-    ld a,(hl) \ xor d \ ld (hl),a \ inc hl
-    dec b
-    jr z,$+8
+    ld a,(hl) \ xor d
+    .db $DA ;start of jp c,**, will skip the next two bytes since `xor d` reset carry
     ld a,(hl) \ cpl \ ld (hl),a \ inc hl \ djnz $-4
     ld a,(hl) \ xor e \ ld (hl),a
     ld bc,12
