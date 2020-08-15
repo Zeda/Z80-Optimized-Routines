@@ -1,0 +1,75 @@
+;This routine uses a time-base delay, which should work with the newer (2019)
+;calculator models whose LCD has a malfunctioning status bit.
+;
+;The TI-83+/84+ and similar calculators have a clock speed that varies based on
+;a number of factors, so we'll assume it is up to 16.5MHz. According to TI's
+;documentation, we'll need 10 microseconds beteen writes to the LCD, so that's
+;165 clock cycles at 16.5MHz
+;Since an out takes at least 11cc, we'll aim for 154cc between outs
+
+#ifndef included_gbuf_to_lcd_15MHz
+#define included_gbuf_to_lcd_15MHz
+
+gbuf_to_lcd_15MHz:
+;This copies the contents of gbuf to the LCD.
+;Preserves all registers.
+  push hl     ;11   11
+  push de     ;11   22
+  push bc     ;11   33
+  push af     ;11   44
+  ex (sp),hl  ;19   63  \
+  ex (sp),hl  ;19   82  |
+  ex (sp),hl  ;19   101 |
+  ex (sp),hl  ;19   120 | waste clock cycles
+  inc hl      ;6    126 |
+  ld a,(hl)   ;7    133 |
+  ld a,(hl)   ;7    140 |
+  ld a,(hl)   ;7    147 /
+  ld a,$80    ;7    154
+  out (16),a  ;11   0
+
+
+  ld a,r      ;9    9   | waste clock cycles
+  ld a,$20    ;7    16
+  ld hl,gbuf  ;10   26
+  ex (sp),hl  ;19   45  \
+  ex (sp),hl  ;19   64  |
+col:
+  ex (sp),hl  ;19   83  |
+  ex (sp),hl  ;19   102 | waste clock cycles
+  ex (sp),hl  ;19   121 |
+  ex (sp),hl  ;19   140 |
+  nop         ;4    144 /
+  ld de,11    ;10   154
+  out (10h),a ;11   0
+  ld b,(hl)   ;7    7
+  xor b       ;4    11  \ waste clock cycles
+  xor b       ;4    15  /
+  ld bc,$8011 ;10   25
+  nop         ;4    29
+
+row:
+  ex (sp),hl  ;19   48  \
+  ex (sp),hl  ;19   67  |
+  ex (sp),hl  ;19   86  |
+  ex (sp),hl  ;19   105 | waste clock cycles
+  ex (sp),hl  ;19   124 |
+  ex (sp),hl  ;19   143 |
+  ld c,17     ;7    150 |
+  nop         ;4    154 /
+  outi        ;16   5
+  add hl,de   ;11   16
+  djnz row    ;13/8 29/24
+  inc a       ;4    28
+  dec h       ;4    32
+  dec h       ;4    36
+  dec h       ;4    40
+  inc hl      ;6    46
+  cp $2C      ;7    53
+  jr nz,col   ;12/7 65
+  pop af      ;10
+  pop bc      ;10
+  pop de      ;10
+  pop hl      ;10
+  ret         ;10
+#endif
