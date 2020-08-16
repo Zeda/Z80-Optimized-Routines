@@ -5,7 +5,7 @@
 ; To use SMC, define SMC.
 ;     #define SMC
 ;
-; If you are not using SMC, you'll need to `arraylen` to point
+; If you are not using SMC, you'll need to define `arraylen` to point
 ;to 2 bytes of scrap RAM
 
 heapsort:
