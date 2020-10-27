@@ -1,7 +1,7 @@
 HL_Div_C_round:
 ;Inputs:
 ;     HL is the numerator
-;     C is the denominator
+;     C<128 is the denominator
 ;Outputs:
 ;     A is twice the remainder of the unrounded value
 ;     B is 0
