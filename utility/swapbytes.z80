@@ -15,7 +15,5 @@ swapbytes:
   dec hl
   ld (hl),a
   inc hl
-  ld a,b
-  or c
-  jr nz,swapbytes
+  jp pe,swapbytes
   ret
