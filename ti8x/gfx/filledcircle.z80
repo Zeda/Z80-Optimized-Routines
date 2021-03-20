@@ -1,5 +1,3 @@
-;Written by Zeda Thomas, free to use.
-
 ;This draws the fill of a circle centered at 8-bit coordinates and with radius
 ;up to 127.
 ;IX points to a `horizontal line` routine that takes E=x, A=y, D=width as input
@@ -21,7 +19,7 @@ filledcircle:
 ;Input:
 ; (B,C) is the center (x,y)
 ; D is the radius, unsigned, less than 128 (0 or greater than 128 just quits).
-; IX points to a `plot` routine that takes (B,C)=(x,y) as input.
+; IX points to a `plot` routine that takes (E,A,D)=(x,y,width) as input.
   ld a,d
   add a,a
   ret c
@@ -40,8 +38,8 @@ filledcircleloop:
   inc d
   jr nc,filledcircleloop
 _:
-  dec l
   call fillcircle_plot
+  dec l
   add a,e
   dec e
   ret z
