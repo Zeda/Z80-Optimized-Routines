@@ -1,5 +1,7 @@
 ; stringlength:
 ; ;Returns BC as the length of the null-terminated string (including null byte).
+; ;speed: 37+21n
+; ;11 bytes
 ;   xor a
 ;   ld c,a
 ;   ld b,a
@@ -15,6 +17,8 @@
 ;This version returns the string length without the null byte
 stringlength:
 ;Returns BC as the length of the null-terminated string
+;speed: 41+21n
+;12 bytes
   xor a
   ld c,a
   ld b,a
