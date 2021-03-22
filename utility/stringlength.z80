@@ -1,32 +1,21 @@
-; stringlength:
-; ;Returns BC as the length of the null-terminated string (including null byte).
-; ;speed: 37+21n
-; ;11 bytes
-;   xor a
-;   ld c,a
-;   ld b,a
-;   cpir
-;   sub c
-;   ld c,a
-;   sbc a,a
-;   sub b
-;   ld b,a
-;   ret
-
-
-;This version returns the string length without the null byte
 stringlength:
-;Returns BC as the length of the null-terminated string
+;Inputs:
+;   HL points to the null-terminated string
+;Outputs:
+;   BC is the length of the string
+;   HL points to the byte after the null-byte
+;Destroys:
+;   A
 ;speed: 41+21n
 ;12 bytes
   xor a
   ld c,a
   ld b,a
   cpir
-  dec a   ;A is $FF
-  xor c
+  scf       ;comment this if the NULL byte should be counted
+  sbc a,c
   ld c,a
-  ld a,b
-  cpl
+  sbc a,a
+  sub b
   ld b,a
   ret
