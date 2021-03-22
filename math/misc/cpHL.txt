@@ -1,15 +1,103 @@
-"I learned these from calc84maniac:"
+;These code snippets are for 16-bit comparisons.
+; NOTE: these are meant to be in-line, not called!
+;
+;"I learned these from calc84maniac"
+;"These have similar flags to that of the `cp` instruction. At the very least,
+; you get the zero and carry flag identical."
 
-Compare HL to DE:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpHL_DE:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   HL, DE
+;Outputs:
+;   z flag is set if HL=DE, else nz
+;   c flag is set if HL<DE, else nc
+;Destroys:
+;   none
+;size: 4 bytes
+;speed: 30cc
+;
     or a
     sbc hl,de
     add hl,de
 
 
-Compare HL to BC:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpHL_BC:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   HL, BC
+;Outputs:
+;   z flag is set if HL=BC, else nz
+;   c flag is set if HL<BC, else nc
+;Destroys:
+;   none
+;size: 4 bytes
+;speed: 30cc
+;
     or a
     sbc hl,bc
     add hl,bc
 
 
-"These have similar flags to that of the `cp` instruction. At the very least, you get the zero and carry flag identical."
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpHL_DE_faster:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   HL, DE
+;Outputs:
+;   z flag is set if HL=DE, else nz
+;   c flag is set if HL<DE, else nc
+;Destroys:
+;   A
+;size: 6 bytes
+;speed: 20cc or 23cc
+;
+  ld a,h
+  cp d
+  jr nz,cpHL_DE_result
+  ld a,l
+  cp e
+cpHL_DE_result:
+
+
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpHL_BC_faster:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   HL, BC
+;Outputs:
+;   z flag is set if HL=BC, else nz
+;   c flag is set if HL<BC, else nc
+;Destroys:
+;   A
+;size: 6 bytes
+;speed: 20cc or 23cc
+;
+  ld a,h
+  cp b
+  jr nz,cpHL_BC_result
+  ld a,l
+  cp c
+cpHL_BC_result:
+
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpDE_BC_faster:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   DE, BC
+;Outputs:
+;   z flag is set if DE=BC, else nz
+;   c flag is set if DE<BC, else nc
+;Destroys:
+;   A
+;size: 6 bytes
+;speed: 20cc or 23cc
+;
+  ld a,d
+  cp b
+  jr nz,cpDE_BC_result
+  ld a,e
+  cp c
+cpDE_BC_result:
