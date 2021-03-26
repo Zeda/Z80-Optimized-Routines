@@ -25,10 +25,10 @@ Then I can `#include`, say, `mul32.z80` with:
 ```
 
 # Other Resources
-[Omnimaga's "ASM Optimized Routines"](https://www.omnimaga.org/asm-language/asm-optimized-routines/)
-[Cemetech's Useful Routines](https://www.cemetech.net/forum/viewtopic.php?t=1449)
-[United TI's Useful Routines](https://www.cemetech.net/projects/uti/viewtopic.php?t=1279)
-[Z80 Heaven](http://z80-heaven.wikidot.com/) has optmization tricks and useful routines.
-[wikiti Generic optimizations](https://wikiti.brandonw.net/index.php?title=Z80_Optimization)
-[32-bit xorshift](https://gist.github.com/raxoft/c074743ea3f926db0037)
-[cmwc rng](https://gist.github.com/raxoft/2275716fea577b48f7f)] Complementary-Multiply-With-Carry RNG, very cool.
+* [Omnimaga's "ASM Optimized Routines"](https://www.omnimaga.org/asm-language/asm-optimized-routines/)
+* [Cemetech's Useful Routines](https://www.cemetech.net/forum/viewtopic.php?t=1449)
+* [United TI's Useful Routines](https://www.cemetech.net/projects/uti/viewtopic.php?t=1279)
+* [Z80 Heaven](http://z80-heaven.wikidot.com/) has optmization tricks and useful routines.
+* [wikiti Generic optimizations](https://wikiti.brandonw.net/index.php?title=Z80_Optimization)
+* [32-bit xorshift](https://gist.github.com/raxoft/c074743ea3f926db0037)
+* [cmwc rng](https://gist.github.com/raxoft/2275716fea577b48f7f) Complementary-Multiply-With-Carry RNG, very cool.
