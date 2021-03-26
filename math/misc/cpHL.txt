@@ -61,7 +61,6 @@ cpHL_DE_faster:
   cp e
 cpHL_DE_result:
 
-
 ;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
 cpHL_BC_faster:
 ;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
@@ -83,6 +82,26 @@ cpHL_BC_faster:
 cpHL_BC_result:
 
 ;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpDE_HL_faster:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   DE, HL
+;Outputs:
+;   z flag is set if DE=HL, else nz
+;   c flag is set if DE<HL, else nc
+;Destroys:
+;   A
+;size: 6 bytes
+;speed: 20cc or 23cc
+;
+  ld a,d
+  cp h
+  jr nz,cpDE_HL_result
+  ld a,e
+  cp l
+cpDE_BC_result:
+
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
 cpDE_BC_faster:
 ;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
 ;Inputs:
@@ -101,3 +120,43 @@ cpDE_BC_faster:
   ld a,e
   cp c
 cpDE_BC_result:
+
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpBC_HL_faster:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   BC, HL
+;Outputs:
+;   z flag is set if BC=HL, else nz
+;   c flag is set if BC<HL, else nc
+;Destroys:
+;   A
+;size: 6 bytes
+;speed: 20cc or 23cc
+;
+  ld a,b
+  cp h
+  jr nz,cpBC_HL_result
+  ld a,c
+  cp l
+cpBC_HL_result:
+
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+cpBC_DE_faster:
+;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;:;;
+;Inputs:
+;   BC, DE
+;Outputs:
+;   z flag is set if BC=DE, else nz
+;   c flag is set if BC<DE, else nc
+;Destroys:
+;   A
+;size: 6 bytes
+;speed: 20cc or 23cc
+;
+  ld a,b
+  cp d
+  jr nz,cpBC_DE_result
+  ld a,c
+  cp e
+cpBC_DE_result:
