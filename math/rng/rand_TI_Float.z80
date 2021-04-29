@@ -1,8 +1,8 @@
 rand_TI_Float:
 ;Generates a random TI float at HL
   push hl
-  call rand_init
-  ld de,$8000   ;D is exponent, E is type
+  ; call rand_init
+  ld de,$8000   ;D is exponent, E is type. E is used in rand_TI_Float_zero
 get_rand_exponent_loop:
 ;decrement exponent
   dec d
@@ -12,7 +12,7 @@ get_rand_exponent_loop:
 ;before the universe's heat death with a true RNG, but better to be safe?
   ld a,d
   cp 28
-  jp z,SetAnsZero
+  jp z,rand_TI_Float_zero
 
 ;save the exponent
   push de
@@ -22,10 +22,12 @@ get_rand_exponent_loop:
 
 ;restore the exponent+type
   pop de
+  or a
 ;if A is 0, we'll decrement the exponent and find a new candidate for the first
 ;digit. This is because we need our float to be "normalized" (top digit non-zero)
 ;This also preserves the uniform distribution for values.
   jr z,get_rand_exponent_loop
+
   pop hl
   ld (hl),e
   inc hl
@@ -39,16 +41,22 @@ math_rand_loop:
 ;now generate subsequent digits
   push bc
   rr b
-  ld a,l
-  sbc a,255
-  ld l,a
+  jr c,$+3
+  inc hl
   push hl
 
 ;generate the next digit
   call rand10
-
   pop hl
   rld
   pop bc
   djnz math_rand_loop
+  ret
+
+rand_TI_Float_zero:
+  pop hl
+  ld b,9
+  ld (hl),e     ; E is 0
+  inc hl
+  djnz $-2
   ret
