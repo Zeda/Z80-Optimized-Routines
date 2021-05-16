@@ -3,46 +3,43 @@
 sqrtA:
 ;Input: A
 ;Output: D is the squareroot, A is the remainder (input-D^2)
-;Destroys: BC
-;speed: 161+{0,6}+{0,1}+{0,1}+{0,3}
-;min: 161cc
-;max: 172cc
-;avg: 166.5cc
-;45 bytes
-  ld d,$40
+;Destroys: E
+;speed: 118+{0,6}+{0,7}+{0,7}+{0,3}
+;min: 118cc
+;max: 141cc
+;avg: 129.5cc
+;38 bytes
+  ld de,5040h       ; 10
+  sub e             ; 4
+  jr nc,sqrtA_skip1 ;\
+  add a,e           ; | branch 1: 12cc
+  ld d,10h          ; | branch 2: 18cc
+sqrtA_skip1:        ;/
 
-  sub d
-  jr nc,+_
-  add a,d
-  ld d,0
-_:
+; ----------
+  cp d              ; 4
+  jr c,sqrtA_skip2  ;\
+  sub d             ; | branch 1: 12cc
+  set 5,d           ; | branch 2: 19cc
+sqrtA_skip2:        ;/
 
-  set 4,d
-  sub d
-  jr nc,+_
-  add a,d
-  .db $01   ;start of ld bc,** which is 10cc to skip the next two bytes.
-_:
-  set 5,d
-  res 4,d
-  srl d
+; ----------
+  res 4,d           ; 8
+  srl d             ; 8
+  set 2,d           ; 8
+  cp d              ; 4
+  jr c,sqrtA_skip3  ;\
+  sub d             ; | branch 1: 12cc
+  set 3,d           ; | branch 2: 19cc
+sqrtA_skip3:        ;/
+  srl d             ; 8
 
-  set 2,d
-  sub d
-  jr nc,+_
-  add a,d
-  .db $01   ;start of ld bc,** which is 10cc to skip the next two bytes.
-_:
-  set 3,d
-  res 2,d
-  srl d
-
-  inc d
-  sub d
-  jr nc,+_
-  add a,d
-  dec d
-_:
-  inc d
-  srl d
-  ret
+; ----------
+  inc a             ; 4
+  sub d             ; 4
+  jr nc,sqrtA_skip4 ;\
+  dec d             ; | branch 1: 12cc
+  add a,d           ; | branch 2: 15cc
+sqrtA_skip4:        ;/
+  srl d             ; 8
+  ret               ; 10
