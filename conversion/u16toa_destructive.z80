@@ -72,7 +72,7 @@ u16toa:
 ;Make sure that the string is non-empty!
   xor a
   cp (hl)
-  ret z
+  ret nz
   dec hl
   ret
 #endif
